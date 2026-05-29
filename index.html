@@ -533,9 +533,7 @@ nav {
 // ──────────────────────────────────────────────
 // CONFIG — Reemplaza con tu URL de Apps Script
 // ──────────────────────────────────────────────
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0P3iJ2nXCm2nQZp7u7YnGkwuDJUXxpzgwQA0-m9klzK5ct_feffk6Ja3xKWqSqSM4/exec';
-
-
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVqrXsXjrw90nSqeT7SC3ee6lQnCDnRp8Fd81HhlO451IWeWPAUKhma-sh7XUjCc4h/exec';
 
 // ── Sedes con coordenadas reales ──────────────
 const SEDES = {
@@ -546,7 +544,7 @@ const SEDES = {
   'Centro':               { lat: 6.251800, lng: -75.563600 },
   'Laboratorio Itagüí':   { lat: 6.184900, lng: -75.599000 },
 };
-const GEO_RADIUS = 1000; // metros
+const GEO_RADIUS = 10; // metros
 
 // ── Estado ─────────────────────────────────────
 let currentUser = null;
@@ -650,7 +648,21 @@ function selectSede(btn) {
 // ──────────────────────────────────────────────
 // FACE API — Cargar modelos desde CDN
 // ──────────────────────────────────────────────
-const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'; async function loadModels() { try { await Promise.all([ faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL), faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL), faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL) ]); modelsLoaded = true; console.log('✅ Modelos cargados correctamente'); } catch (e) { console.error('❌ Error cargando modelos:', e); showToast('Error cargando IA facial', 'error'); } }
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+
+async function loadModels() {
+  try {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+    modelsLoaded = true;
+    console.log('Modelos cargados');
+  } catch (e) {
+    console.error('Error cargando modelos:', e);
+  }
+}
 
 // ──────────────────────────────────────────────
 // CÁMARA
@@ -915,43 +927,15 @@ async function loadHistory() {
 // ──────────────────────────────────────────────
 // API CALL
 // ──────────────────────────────────────────────
-function apiCall(params) {
-
-  return new Promise((resolve, reject) => {
-
-    const callbackName =
-      'jsonp_callback_' + Math.round(100000 * Math.random());
-
-    window[callbackName] = function(data) {
-
-      delete window[callbackName];
-
-      document.body.removeChild(script);
-
-      resolve(data);
-    };
-
+async function apiCall(params) {
+  try {
     const url = new URL(SCRIPT_URL);
-
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-
-    url.searchParams.append('callback', callbackName);
-
-    const script = document.createElement('script');
-
-    script.src = url.toString();
-
-    script.onerror = () => {
-
-      delete window[callbackName];
-
-      reject(new Error('Error de conexión'));
-    };
-
-    document.body.appendChild(script);
-  });
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    const res = await fetch(url.toString(), { redirect: 'follow' });
+    return await res.json();
+  } catch (e) {
+    return { success: false, message: 'Error de conexión. Revisa el SCRIPT_URL.' };
+  }
 }
 
 // ──────────────────────────────────────────────
