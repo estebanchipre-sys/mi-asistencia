@@ -917,12 +917,30 @@ async function loadHistory() {
 // ──────────────────────────────────────────────
 async function apiCall(params) {
   try {
-    const url = new URL(SCRIPT_URL);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), { redirect: 'follow' });
-    return await res.json();
+
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(params)
+    });
+
+    const text = await res.text();
+
+    console.log("RAW:", text);
+
+    return JSON.parse(text);
+
   } catch (e) {
-    return { success: false, message: 'Error de conexión. Revisa el SCRIPT_URL.' };
+
+    console.error(e);
+
+    return {
+      success: false,
+      message: e.toString()
+    };
   }
 }
 
