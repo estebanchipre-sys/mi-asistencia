@@ -63,16 +63,33 @@ var H_AUDITORIA = ['Timestamp', 'Accion', 'ID_Empleado', 'Nombre', 'Resultado', 
 /**
  * SEDES — única fuente de verdad. La app las lee de aquí, así no hay que
  * tocar el HTML para agregar o corregir una sede.
- * Ajusta lat/lng con las coordenadas exactas (Google Maps → clic derecho → copiar).
+ *
+ * "verificada: true"  = la coordenada se calculó con el GPS de las marcaciones reales.
+ * "verificada: false" = coordenada estimada, NADIE ha marcado nunca ahí todavía.
+ *
+ * Para corregir una: menú ⏱ Asistencia → "Sugerir coordenadas reales de sedes".
+ * Esa opción promedia el GPS de las marcaciones ya guardadas y te dice el punto exacto.
  */
 var SEDES = [
-  { nombre: 'Guayabal - Julián',    corto: 'Guayabal',      detalle: 'Julián · Cl. 5A #58-4',  lat: 6.214200, lng: -75.591300 },
-  { nombre: 'Guayabal - Vampi',     corto: 'Guayabal',      detalle: 'Vampi · Cl. 17A #54-99', lat: 6.213800, lng: -75.591000 },
-  { nombre: 'Laboratorio Robleado', corto: 'Lab. Robleado', detalle: 'Cl. 80A #72C-180',       lat: 6.272300, lng: -75.608300 },
-  { nombre: 'Laboratorio Caribe',   corto: 'Lab. Caribe',   detalle: 'Cl. 75A #64D-17',        lat: 6.270000, lng: -75.607000 },
-  { nombre: 'Centro',               corto: 'Centro',        detalle: 'Cra. 51 #45-70',         lat: 6.251800, lng: -75.563600 },
-  { nombre: 'Laboratorio Itagüí',   corto: 'Lab. Itagüí',   detalle: 'Cra. 52A #45-11',        lat: 6.184900, lng: -75.599000 }
+  // Verificada con 17 marcaciones reales (dispersión de solo 34 m).
+  // La coordenada anterior (6.2142, -75.5913) estaba a ~600 m del local:
+  // con un radio de 250 m NADIE habría podido marcar.
+  { nombre: 'Guayabal - Julián',    corto: 'Guayabal',      detalle: 'Julián · Cl. 5A #58-4',  lat: 6.212850, lng: -75.585934, verificada: true },
+
+  // Sin marcaciones todavía: verifica estas antes de usarlas.
+  { nombre: 'Guayabal - Vampi',     corto: 'Guayabal',      detalle: 'Vampi · Cl. 17A #54-99', lat: 6.213800, lng: -75.591000, verificada: false },
+  { nombre: 'Laboratorio Robleado', corto: 'Lab. Robleado', detalle: 'Cl. 80A #72C-180',       lat: 6.272300, lng: -75.608300, verificada: false },
+  { nombre: 'Laboratorio Caribe',   corto: 'Lab. Caribe',   detalle: 'Cl. 75A #64D-17',        lat: 6.270000, lng: -75.607000, verificada: false },
+  { nombre: 'Centro',               corto: 'Centro',        detalle: 'Cra. 51 #45-70',         lat: 6.251800, lng: -75.563600, verificada: false },
+  { nombre: 'Laboratorio Itagüí',   corto: 'Lab. Itagüí',   detalle: 'Cra. 52A #45-11',        lat: 6.184900, lng: -75.599000, verificada: false }
 ];
+
+/** Colombia es UTC-5 todo el año (no hay horario de verano). */
+var OFFSET_BOGOTA = 5;
+
+/** Nombres de las hojas del sistema anterior, para importarlas sin tocarlas. */
+var LEGACY_EMPLEADOS = 'Employees';
+var LEGACY_REGISTROS = 'Records';
 
 var CONFIG_DEFAULT = [
   ['PIN_ADMIN',              '1234', 'PIN para registrar empleados nuevos o agregar rostros. CÁMBIALO YA.'],
@@ -257,6 +274,8 @@ function instalar() {
     }
   }
 
+  informe = informe.concat(importarSistemaAnterior_());
+
   var normalizadas = normalizarRegistros_();
   if (normalizadas) informe.push('Se completaron los datos faltantes de ' + normalizadas + ' registro(s) antiguo(s) para que cuenten en los resúmenes.');
 
@@ -355,6 +374,295 @@ function migrar_(hojaNueva, headers, datosViejos) {
 
   hojaNueva.getRange(2, 1, filas.length, headers.length).setValues(filas);
   return filas.length;
+}
+
+/* ───────────────  IMPORTAR EL SISTEMA ANTERIOR (Employees / Records)  ─────────────── */
+
+/** Busca en qué columna está cada campo, aceptando varios nombres posibles. */
+function indices_(cabecera, mapa) {
+  var norm = cabecera.map(function (h) { return normalizar_(h); });
+  var out = {};
+  Object.keys(mapa).forEach(function (clave) {
+    out[clave] = -1;
+    mapa[clave].forEach(function (nombre) {
+      if (out[clave] < 0) out[clave] = norm.indexOf(normalizar_(nombre));
+    });
+  });
+  return out;
+}
+
+/** Combina '2026-08-10' + '12:32:42' en un Date real de la hora de Bogotá. */
+function fechaHoraLocal_(fechaStr, horaStr) {
+  var f = claveFecha_(fechaStr);
+  if (!f || f.length < 10) return null;
+  var p = f.split('-');
+  var h = String(horaStr || '00:00:00').trim().split(':');
+  if (p.length !== 3) return null;
+  var d = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]),
+                            (Number(h[0]) || 0) + OFFSET_BOGOTA,
+                            Number(h[1]) || 0, Number(h[2]) || 0));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Copia los datos de las hojas "Employees" y "Records" del sistema anterior
+ * a las hojas nuevas. Las hojas originales NO se tocan ni se renombran:
+ * quedan ahí intactas como respaldo.
+ * Solo importa si la hoja nueva todavía está vacía, así no duplica nada.
+ */
+function importarSistemaAnterior_() {
+  var libro = ss_();
+  var informe = [];
+
+  /* ── Empleados ── */
+  var oEmp = libro.getSheetByName(LEGACY_EMPLEADOS);
+  var dEmp = libro.getSheetByName(HOJAS.EMPLEADOS);
+  if (oEmp && dEmp && dEmp.getLastRow() <= 1 && oEmp.getLastRow() > 1) {
+    var v = oEmp.getDataRange().getValues();
+    var i1 = indices_(v[0], {
+      id:     ['id', 'idempleado', 'employeeid'],
+      nombre: ['name', 'nombre'],
+      desc:   ['facedescriptor', 'descriptor', 'descriptores', 'rostro'],
+      sede:   ['sede', 'sucursal'],
+      creado: ['createdat', 'fecharegistro', 'fecha']
+    });
+
+    var filasE = [];
+    for (var i = 1; i < v.length; i++) {
+      if (i1.id < 0 || !v[i][i1.id]) continue;
+      var texto = i1.desc >= 0 ? String(v[i][i1.desc] || '').trim() : '';
+      var muestras = 0;
+      if (texto) {
+        try {
+          var arr = JSON.parse(texto);
+          if (arr.length && typeof arr[0] === 'number') arr = [arr];   // formato viejo: un descriptor plano
+          texto = JSON.stringify(arr);
+          muestras = arr.length;
+        } catch (e) { texto = ''; }
+      }
+      filasE.push([
+        v[i][i1.id],
+        i1.nombre >= 0 ? v[i][i1.nombre] : '',
+        '',
+        i1.sede >= 0 ? v[i][i1.sede] : '',
+        'SI',
+        muestras,
+        texto,
+        i1.creado >= 0 ? v[i][i1.creado] : '',
+        new Date()
+      ]);
+    }
+    if (filasE.length) {
+      dEmp.getRange(2, 1, filasE.length, H_EMPLEADOS.length).setValues(filasE);
+      informe.push('Se importaron ' + filasE.length + ' empleados desde "' + LEGACY_EMPLEADOS +
+                   '" con su rostro. La hoja original quedó intacta.');
+    }
+  }
+
+  /* ── Registros ── */
+  var oReg = libro.getSheetByName(LEGACY_REGISTROS);
+  var dReg = libro.getSheetByName(HOJAS.REGISTROS);
+  if (oReg && dReg && dReg.getLastRow() <= 1 && oReg.getLastRow() > 1) {
+    var w = oReg.getDataRange().getValues();
+    var i2 = indices_(w[0], {
+      id:      ['id', 'idregistro'],
+      emp:     ['employeeid', 'idempleado'],
+      nombre:  ['name', 'nombre'],
+      sede:    ['sede', 'sucursal'],
+      fecha:   ['date', 'fecha'],
+      entrada: ['checkin', 'entrada'],
+      salida:  ['checkout', 'salida'],
+      horas:   ['hoursworked', 'horas', 'horasnetas'],
+      lat:     ['lat', 'latitud'],
+      lng:     ['lng', 'lon', 'longitud']
+    });
+
+    var filasR = [], duplicadosDia = 0, vistos = {};
+    for (var j = 1; j < w.length; j++) {
+      if (i2.fecha < 0 || !w[j][i2.fecha]) continue;
+
+      var entrada = fechaHoraLocal_(w[j][i2.fecha], i2.entrada >= 0 ? w[j][i2.entrada] : '');
+      if (!entrada) continue;
+      var salida = (i2.salida >= 0 && w[j][i2.salida])
+        ? fechaHoraLocal_(w[j][i2.fecha], w[j][i2.salida]) : null;
+
+      var claveDia = String(w[j][i2.emp]) + '|' + claveFecha_(w[j][i2.fecha]);
+      var esDuplicado = !!vistos[claveDia];
+      vistos[claveDia] = true;
+      if (esDuplicado) duplicadosDia++;
+
+      var netas = i2.horas >= 0 && w[j][i2.horas] !== '' ? Number(w[j][i2.horas]) || 0 : 0;
+      var estado = esDuplicado ? 'DUPLICADO' : (salida ? 'COMPLETO' : 'PENDIENTE');
+      var fechaDia = fechaDiaLocal_(entrada);
+      var gps = (i2.lat >= 0 && w[j][i2.lat]) ? w[j][i2.lat] + ',' + w[j][i2.lng] : '';
+
+      var fila = [];
+      fila[C.ID]       = i2.id >= 0 && w[j][i2.id] ? w[j][i2.id] : 'IMP-' + j;
+      fila[C.EMP]      = i2.emp >= 0 ? w[j][i2.emp] : '';
+      fila[C.NOMBRE]   = i2.nombre >= 0 ? w[j][i2.nombre] : '';
+      fila[C.FECHA]    = fechaDia;
+      fila[C.DIA]      = nombreDia_(entrada);
+      fila[C.ENTRADA]  = entrada;
+      fila[C.SALIDA]   = salida || '';
+      fila[C.BRUTAS]   = salida ? redondear_((salida - entrada) / 3600000, 2) : 0;
+      fila[C.DESC]     = 0;
+      fila[C.NETAS]    = netas;
+      fila[C.SEDE_IN]  = i2.sede >= 0 ? w[j][i2.sede] : '';
+      fila[C.SEDE_OUT] = '';
+      fila[C.GPS_IN]   = gps;
+      fila[C.GPS_OUT]  = '';
+      fila[C.ESTADO]   = estado;
+      fila[C.SEMANA]   = semanaIso_(fechaDia).clave;
+      fila[C.MES]      = claveFecha_(fechaDia).substring(0, 7);
+      fila[C.OBS]      = esDuplicado
+        ? 'Importado del sistema anterior: segunda entrada del mismo día, no cuenta horas.'
+        : 'Importado del sistema anterior.';
+      filasR.push(fila);
+    }
+
+    if (filasR.length) {
+      dReg.getRange(2, 1, filasR.length, H_REGISTROS.length).setValues(filasR);
+      informe.push('Se importaron ' + filasR.length + ' marcaciones desde "' + LEGACY_REGISTROS + '".');
+      if (duplicadosDia) {
+        informe.push('De esas, ' + duplicadosDia + ' eran entradas repetidas del mismo día: quedaron marcadas ' +
+                     'como DUPLICADO y no suman horas.');
+      }
+      var sinSalida = filasR.filter(function (f) { return f[C.ESTADO] === 'PENDIENTE'; }).length;
+      if (sinSalida) {
+        informe.push('⚠ ' + sinSalida + ' marcaciones no tienen hora de SALIDA (el botón nunca funcionó). ' +
+                     'Quedaron como PENDIENTE en la hoja Inconsistencias para que las completes a mano.');
+      }
+    }
+  }
+
+  return informe;
+}
+
+/* ───────────────  CONSOLIDAR EMPLEADOS DUPLICADOS  ─────────────── */
+
+/**
+ * Junta los empleados que están registrados dos veces con el mismo nombre.
+ * Conserva el registro más antiguo, le suma las muestras de rostro de los
+ * duplicados (así reconoce mejor), reasigna sus marcaciones y deja los
+ * duplicados como Activo = NO. No borra ninguna fila.
+ *
+ * Solo agrupa nombres realmente iguales ignorando mayúsculas y tildes:
+ * "Fabian" y "fabian" sí; "David Monsalve" y "Donoban David Monsalve" no.
+ */
+function consolidarDuplicados() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) return ['El sistema está ocupado, inténtalo de nuevo.'];
+
+  try {
+    var sEmp = hoja_(HOJAS.EMPLEADOS);
+    var lista = leerEmpleados_();
+    var grupos = {};
+
+    lista.forEach(function (e) {
+      var k = normalizar_(e.nombre);
+      if (!k) return;
+      (grupos[k] = grupos[k] || []).push(e);
+    });
+
+    var informe = [], reasignaciones = {};
+
+    Object.keys(grupos).forEach(function (k) {
+      var g = grupos[k].filter(function (e) { return e.activo; });
+      if (g.length < 2) return;
+
+      g.sort(function (a, b) { return a.fila - b.fila; });   // el más antiguo primero
+      var principal = g[0];
+
+      var muestras = [];
+      g.forEach(function (e) {
+        try {
+          var d = JSON.parse(e.descriptores || '[]');
+          if (d.length && typeof d[0] === 'number') d = [d];
+          muestras = muestras.concat(d);
+        } catch (err) { /* descriptor ilegible: se ignora */ }
+      });
+      if (muestras.length > 6) muestras = muestras.slice(0, 6);
+
+      sEmp.getRange(principal.fila, 6).setValue(muestras.length);
+      sEmp.getRange(principal.fila, 7).setValue(JSON.stringify(muestras));
+      sEmp.getRange(principal.fila, 9).setValue(new Date());
+
+      var nombres = [];
+      for (var i = 1; i < g.length; i++) {
+        sEmp.getRange(g[i].fila, 5).setValue('NO');
+        reasignaciones[g[i].id] = { id: principal.id, nombre: principal.nombre };
+        nombres.push(g[i].id);
+      }
+
+      informe.push('"' + principal.nombre + '": se unieron ' + g.length + ' registros en uno solo (' +
+                   muestras.length + ' muestras de rostro). Desactivados: ' + nombres.join(', '));
+    });
+
+    // Reasignar las marcaciones de los duplicados al empleado principal
+    var claves = Object.keys(reasignaciones);
+    if (claves.length) {
+      var datos = leerRegistros_();
+      var cambiadas = 0;
+      if (datos.filas.length) {
+        for (var r = 0; r < datos.filas.length; r++) {
+          var destino = reasignaciones[String(datos.filas[r][C.EMP])];
+          if (!destino) continue;
+          datos.filas[r][C.EMP] = destino.id;
+          datos.filas[r][C.NOMBRE] = destino.nombre;
+          cambiadas++;
+        }
+        if (cambiadas) {
+          datos.hoja.getRange(2, 1, datos.filas.length, H_REGISTROS.length).setValues(datos.filas);
+          informe.push(cambiadas + ' marcaciones se reasignaron al empleado correcto.');
+        }
+      }
+      recalcularResumenes();
+    }
+
+    if (!informe.length) informe.push('No se encontraron empleados duplicados.');
+    return informe;
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Promedia el GPS guardado en Registros para decirte la coordenada real de
+ * cada sede. Sirve para corregir la constante SEDES sin adivinar.
+ */
+function sugerirCoordenadas() {
+  var datos = leerRegistros_();
+  var acum = {};
+
+  datos.filas.forEach(function (d) {
+    var sede = String(d[C.SEDE_IN] || '').trim();
+    var gps = String(d[C.GPS_IN] || '').trim();
+    if (!sede || !gps) return;
+    var p = gps.split(',');
+    var la = Number(p[0]), ln = Number(p[1]);
+    if (!la || !ln) return;
+    if (!acum[sede]) acum[sede] = { n: 0, la: 0, ln: 0, lats: [], lngs: [] };
+    acum[sede].n++; acum[sede].la += la; acum[sede].ln += ln;
+    acum[sede].lats.push(la); acum[sede].lngs.push(ln);
+  });
+
+  var lineas = [];
+  Object.keys(acum).forEach(function (sede) {
+    var a = acum[sede];
+    var lat = a.la / a.n, lng = a.ln / a.n;
+    var disp = Math.round(Math.max(
+      Math.max.apply(null, a.lats) - Math.min.apply(null, a.lats),
+      Math.max.apply(null, a.lngs) - Math.min.apply(null, a.lngs)) * 111000);
+    var actual = buscarSede_(sede);
+    var lejos = actual ? Math.round(distanciaMetros_(lat, lng, actual.lat, actual.lng)) : null;
+    lineas.push(sede + '\n  lat: ' + lat.toFixed(6) + '   lng: ' + lng.toFixed(6) +
+                '\n  (' + a.n + ' marcaciones, dispersión ' + disp + ' m' +
+                (lejos !== null ? ', la coordenada actual está a ' + lejos + ' m' : '') + ')');
+  });
+
+  if (!lineas.length) lineas.push('Todavía no hay marcaciones con GPS para calcular coordenadas.');
+  return lineas;
 }
 
 /**
@@ -996,6 +1304,7 @@ function recalcularResumenes() {
 
     var cuenta = (estado === 'COMPLETO' || estado === 'ANOMALIA') ? 1 : 0;
     var pend = (estado === 'PENDIENTE' || estado === 'ABIERTO') ? 1 : 0;
+    if (estado === 'DUPLICADO') { cuenta = 0; pend = 0; }
 
     var sk = String(d[C.SEMANA] || '') + '||' + empId;
     if (!semMap[sk]) {
@@ -1141,6 +1450,9 @@ function onOpen() {
     .addItem('2. Recalcular resúmenes', 'menuRecalcular')
     .addItem('3. Cerrar jornadas olvidadas', 'menuCerrar')
     .addSeparator()
+    .addItem('Unir empleados duplicados', 'menuConsolidar')
+    .addItem('Sugerir coordenadas reales de sedes', 'menuCoordenadas')
+    .addSeparator()
     .addItem('Crear disparadores automáticos', 'crearDisparadores')
     .addToUi();
 }
@@ -1160,6 +1472,24 @@ function menuRecalcular() {
 function menuCerrar() {
   var n = cerrarJornadasOlvidadas();
   SpreadsheetApp.getUi().alert('Jornadas cerradas', n + ' jornada(s) sin salida quedaron como PENDIENTE.',
+    SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+function menuConsolidar() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert('Unir empleados duplicados',
+    'Se van a unir los empleados que estén registrados dos veces con el mismo nombre.\n\n' +
+    'El más antiguo se queda con todas las muestras de rostro, sus marcaciones se reasignan ' +
+    'y los duplicados quedan como Activo = NO.\n\nNo se borra ninguna fila. ¿Continuar?',
+    ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
+  ui.alert('Resultado', consolidarDuplicados().join('\n\n'), ui.ButtonSet.OK);
+}
+
+function menuCoordenadas() {
+  SpreadsheetApp.getUi().alert('Coordenadas reales según el GPS de las marcaciones',
+    sugerirCoordenadas().join('\n\n') +
+    '\n\nCopia estos valores en la constante SEDES del Apps Script y vuelve a implementar.',
     SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
