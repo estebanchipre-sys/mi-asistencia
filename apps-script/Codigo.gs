@@ -195,6 +195,16 @@ function semanaIso_(fecha) {
   };
 }
 
+/**
+ * 'yyyy-MM' de un valor de celda. Google Sheets convierte el texto "2026-08"
+ * en una fecha (1 de agosto de 2026); esto lo devuelve a texto en cualquier caso.
+ */
+function claveMes_(v) {
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') return fmt_(v, 'yyyy-MM');
+  return String(v).trim().substring(0, 7);
+}
+
 /** Muestra una hora venga como Date (sistema nuevo) o como texto (datos migrados). */
 function horaTexto_(v, patron) {
   if (!v && v !== 0) return '';
@@ -768,7 +778,7 @@ function normalizarRegistros_() {
     if (!f[C.EMP])    { var e = porNombre[normalizar_(f[C.NOMBRE])]; if (e) { f[C.EMP] = e.id; toco = true; } }
     if (!f[C.ESTADO]) { f[C.ESTADO] = f[C.SALIDA] ? 'COMPLETO' : 'PENDIENTE'; toco = true; }
     if (!f[C.SEMANA] && clave) { f[C.SEMANA] = semanaIso_(clave).clave; toco = true; }
-    if (!f[C.MES]    && clave) { f[C.MES] = clave.substring(0, 7); toco = true; }
+    if (!claveMes_(f[C.MES]) && clave) { f[C.MES] = clave.substring(0, 7); toco = true; }
     if (!f[C.DIA]    && clave) { f[C.DIA] = nombreDia_(new Date(clave + 'T12:00:00Z')); toco = true; }
     if (f[C.NETAS] === '' && f[C.ESTADO] !== 'ABIERTO') { f[C.NETAS] = 0; toco = true; }
 
@@ -786,6 +796,7 @@ function aplicarFormato_(libro) {
     reg.getRange('D:D').setNumberFormat('yyyy-mm-dd');
     reg.getRange('F:G').setNumberFormat('yyyy-mm-dd hh:mm:ss');
     reg.getRange('H:J').setNumberFormat('0.00');
+    reg.getRange('P:Q').setNumberFormat('@');   // Semana y Mes: texto, para que Sheets no los vuelva fechas
   }
   var emp = libro.getSheetByName(HOJAS.EMPLEADOS);
   if (emp) {
@@ -1310,7 +1321,7 @@ function accionReportes_(p) {
       semana[nombre].horas += netas;
       semana[nombre].pendientes += pendiente;
     }
-    if (String(d[C.MES]) === mes) {
+    if (claveMes_(d[C.MES]) === mes) {
       if (!mensual[nombre]) mensual[nombre] = { nombre: nombre, dias: 0, horas: 0, pendientes: 0 };
       mensual[nombre].dias += trabajado;
       mensual[nombre].horas += netas;
@@ -1393,8 +1404,9 @@ function recalcularResumenes() {
     semMap[sk].horas += netas;
     semMap[sk].pend += pend;
 
-    var mk = String(d[C.MES] || fechaClave.substring(0, 7)) + '||' + empId;
-    if (!mesMap[mk]) mesMap[mk] = { mes: String(d[C.MES] || fechaClave.substring(0, 7)),
+    var mesClave = claveMes_(d[C.MES]) || fechaClave.substring(0, 7);
+    var mk = mesClave + '||' + empId;
+    if (!mesMap[mk]) mesMap[mk] = { mes: mesClave,
                                     id: empId, nombre: nombre, dias: 0, horas: 0, pend: 0 };
     mesMap[mk].dias += cuenta;
     mesMap[mk].horas += netas;
@@ -1440,6 +1452,8 @@ function volcar_(libro, nombre, headers, filas) {
     s.getRange('F:G').setNumberFormat('yyyy-mm-dd hh:mm');
     s.getRange('H:H').setNumberFormat('0.00');
   }
+  if (nombre === HOJAS.SEMANAL)  s.getRange('A:C').setNumberFormat('@');
+  if (nombre === HOJAS.MENSUAL)  s.getRange('A:A').setNumberFormat('@');
   if (nombre === HOJAS.INCONSISTENCIAS) {
     s.getRange('A:A').setNumberFormat('yyyy-mm-dd');
     s.getRange('D:E').setNumberFormat('yyyy-mm-dd hh:mm');
