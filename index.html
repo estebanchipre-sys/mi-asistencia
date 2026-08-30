@@ -2,970 +2,866 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
 <title>Control de Asistencia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-:root {
-  --bg: #0a0a0f;
-  --surface: #111118;
-  --surface2: #1a1a26;
-  --border: rgba(255,255,255,0.07);
-  --accent: #6c63ff;
-  --accent2: #00d4aa;
-  --danger: #ff4757;
-  --warn: #ffa502;
-  --text: #f0f0ff;
-  --muted: #8888aa;
-  --entry: #00d4aa;
-  --exit: #ff6b8a;
-  --radius: 16px;
+:root{
+  --bg:#0a0a0f; --surface:#111118; --surface2:#1a1a26; --border:rgba(255,255,255,.08);
+  --accent:#6c63ff; --accent2:#00d4aa; --danger:#ff4757; --warn:#ffa502;
+  --text:#f0f0ff; --muted:#8888aa; --entry:#00d4aa; --exit:#ff6b8a; --radius:16px;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(108,99,255,.08) 0,transparent 60%),
+             radial-gradient(ellipse 60% 40% at 80% 80%,rgba(0,212,170,.06) 0,transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:16px 16px 96px}
 
-/* BG pattern */
-body::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(108,99,255,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,212,170,0.06) 0%, transparent 60%);
-  pointer-events:none;
-  z-index:0;
-}
+header{text-align:center;padding:20px 0 8px}
+.logo-mark{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:14px;
+  display:inline-flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;
+  font-size:20px;color:#fff;margin-bottom:10px;box-shadow:0 0 32px rgba(108,99,255,.35)}
+header h1{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px}
+header p{color:var(--muted);font-size:12px;margin-top:3px}
 
-.wrap { position:relative; z-index:1; max-width:480px; margin:0 auto; padding:20px 16px 100px; }
+#clock{text-align:center;font-family:'Syne',sans-serif;font-size:40px;font-weight:700;letter-spacing:-1px;margin:12px 0 2px;
+  background:linear-gradient(135deg,#fff 40%,var(--muted));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#date-str{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px;text-transform:capitalize}
 
-/* HEADER */
-header {
-  text-align:center;
-  padding: 28px 0 20px;
-}
-.logo-mark {
-  width: 52px; height: 52px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 22px;
-  color: #fff;
-  margin-bottom: 12px;
-  box-shadow: 0 0 32px rgba(108,99,255,0.35);
-}
-header h1 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: -0.5px;
-}
-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-family:'Syne',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 
-/* CLOCK */
-#clock {
-  text-align: center;
-  font-family: 'Syne', sans-serif;
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -1px;
-  margin: 16px 0 4px;
-  background: linear-gradient(135deg, #fff 40%, var(--muted));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-#date-str { text-align:center; color:var(--muted); font-size:13px; margin-bottom:20px; }
+.sede-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sede-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;
+  text-align:center;transition:all .18s;font-family:'DM Sans',sans-serif;color:var(--muted);font-size:11.5px;line-height:1.3}
+.sede-btn strong{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.sede-btn small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.sede-btn.active{border-color:var(--accent);background:rgba(108,99,255,.12);color:var(--text);box-shadow:0 0 16px rgba(108,99,255,.2)}
+.sede-btn.cerca strong::after{content:' ●';color:var(--entry);font-size:9px;vertical-align:middle}
 
-/* SEDE SELECTOR */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 14px;
-}
-.card-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-.sede-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.sede-btn {
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 8px;
-  cursor: pointer;
-  text-align: center;
-  transition: all .2s;
-  font-family: 'DM Sans', sans-serif;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.3;
-}
-.sede-btn strong { display:block; color:var(--text); font-size:13px; margin-bottom:2px; }
-.sede-btn:hover { border-color: var(--accent); color: var(--text); }
-.sede-btn.active {
-  border-color: var(--accent);
-  background: rgba(108,99,255,0.12);
-  color: var(--text);
-  box-shadow: 0 0 16px rgba(108,99,255,0.2);
-}
-.sede-btn.geo-ok { border-color: var(--entry); }
-.sede-btn.geo-fail { border-color: var(--danger); opacity: 0.5; pointer-events:none; }
+.status-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:10px;
+  padding:10px 13px;background:var(--surface);border-radius:10px;border:1px solid var(--border)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex-shrink:0;box-shadow:0 0 8px currentColor}
+.dot.ok{background:var(--entry)} .dot.fail{background:var(--danger)} .dot.wait{background:var(--warn)}
 
-/* STATUS GEO */
-#geo-status {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: var(--muted);
-  margin-bottom: 14px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-}
-#geo-dot {
-  width:8px; height:8px; border-radius:50%;
-  background: var(--warn);
-  flex-shrink:0;
-  box-shadow: 0 0 8px currentColor;
-}
-#geo-dot.ok { background: var(--entry); }
-#geo-dot.fail { background: var(--danger); }
+#camera-wrap{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden;
+  margin-bottom:12px;border:1px solid var(--border)}
+#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+#canvas-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#cam-label{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:12.5px;color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.75));padding:16px 8px 8px;font-weight:500}
+#cam-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11.5px;display:none;align-items:center;gap:6px}
+#cam-badge.show{display:inline-flex}
+#btn-cambiar{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border:1px solid var(--border);
+  color:var(--muted);border-radius:20px;padding:5px 12px;font-size:11px;cursor:pointer;display:none;font-family:'DM Sans',sans-serif}
+#btn-cambiar.show{display:block}
 
-/* CAMERA */
-#camera-wrap {
-  position: relative;
-  width:100%;
-  aspect-ratio: 4/3;
-  background: #000;
-  border-radius: 14px;
-  overflow: hidden;
-  margin-bottom: 14px;
-  border: 1px solid var(--border);
-}
-#video { width:100%; height:100%; object-fit:cover; display:block; transform: scaleX(-1); }
-#canvas-overlay {
-  position:absolute; inset:0;
-  pointer-events:none;
-}
-.scan-line {
-  position:absolute;
-  left:0; right:0;
-  height:2px;
-  background: linear-gradient(90deg, transparent, var(--accent2), transparent);
-  animation: scan 2.5s ease-in-out infinite;
-  opacity:0;
-}
-.scan-line.active { opacity:1; }
-@keyframes scan {
-  0%   { top:10%; opacity:0; }
-  10%  { opacity:1; }
-  90%  { opacity:1; }
-  100% { top:90%; opacity:0; }
-}
-.face-box {
-  position:absolute;
-  border:2px solid var(--accent2);
-  border-radius:8px;
-  box-shadow: 0 0 12px rgba(0,212,170,0.4);
-  transition: all .15s;
-  pointer-events:none;
-}
-#cam-label {
-  position:absolute; bottom:10px; left:0; right:0;
-  text-align:center;
-  font-size:12px;
-  color:rgba(255,255,255,0.8);
-  background: rgba(0,0,0,0.5);
-  padding:4px 0;
-}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btn{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;padding:16px 10px;border:none;border-radius:14px;
+  cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;overflow:hidden}
+.btn:active{transform:scale(.97)}
+.btn-entry{background:linear-gradient(135deg,#00b894,#00d4aa);color:#00332a;box-shadow:0 4px 20px rgba(0,212,170,.28)}
+.btn-exit{background:linear-gradient(135deg,#ff4757,#ff6b8a);color:#3d0010;box-shadow:0 4px 20px rgba(255,71,87,.28)}
+.btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none}
+.btn-icon{font-size:20px} .btn-sub{font-size:10.5px;font-weight:400;font-family:'DM Sans',sans-serif;opacity:.85}
+#hint{text-align:center;font-size:12px;color:var(--muted);margin-bottom:12px;min-height:16px;line-height:1.4}
 
-/* BOTONES ACCIÓN */
-.action-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.btn {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 16px;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all .2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  position:relative;
-  overflow:hidden;
-}
-.btn::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  background:rgba(255,255,255,0);
-  transition: background .15s;
-}
-.btn:hover::after { background:rgba(255,255,255,0.06); }
-.btn:active::after { background:rgba(255,255,255,0.12); }
-.btn-entry {
-  background: linear-gradient(135deg, #00b894, #00d4aa);
-  color: #003d30;
-  box-shadow: 0 4px 20px rgba(0,212,170,0.3);
-}
-.btn-exit {
-  background: linear-gradient(135deg, #ff4757, #ff6b8a);
-  color: #3d0010;
-  box-shadow: 0 4px 20px rgba(255,71,87,0.3);
-}
-.btn:disabled {
-  opacity:.4;
-  cursor:not-allowed;
-  box-shadow:none;
-}
-.btn-icon { font-size: 22px; }
-.btn-sub { font-size: 11px; font-weight:400; font-family:'DM Sans',sans-serif; opacity:.8; }
+#today-status{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:none}
+.status-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px}
+.status-row:last-child{margin-bottom:0}
+.status-label{color:var(--muted);font-size:12.5px}
+.status-val{font-family:'Syne',sans-serif;font-weight:600;font-size:14px;text-align:right}
+.tag-in{color:var(--entry)} .tag-out{color:var(--exit)}
+.chip{font-size:10px;font-family:'DM Sans',sans-serif;font-weight:500;padding:3px 9px;border-radius:20px;letter-spacing:.3px}
+.chip.abierto{background:rgba(255,165,2,.15);color:var(--warn)}
+.chip.completo{background:rgba(0,212,170,.15);color:var(--entry)}
+.chip.pendiente{background:rgba(255,71,87,.15);color:var(--danger)}
 
-/* NAME INPUT (primer registro) */
-#register-panel {
-  display:none;
-  background: var(--surface);
-  border:1px solid var(--accent);
-  border-radius: var(--radius);
-  padding:20px;
-  margin-bottom:14px;
-  box-shadow: 0 0 24px rgba(108,99,255,0.15);
-}
-#register-panel h3 {
-  font-family:'Syne',sans-serif;
-  font-size:15px;
-  margin-bottom:14px;
-}
-.input-field {
-  width:100%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: var(--text);
-  font-family:'DM Sans',sans-serif;
-  font-size:15px;
-  margin-bottom:10px;
-  outline:none;
-  transition: border-color .2s;
-}
-.input-field:focus { border-color: var(--accent); }
-.btn-full {
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:none;
-  font-family:'Syne',sans-serif;
-  font-weight:700;
-  font-size:15px;
-  cursor:pointer;
-  background: linear-gradient(135deg, var(--accent), #8c86ff);
-  color:#fff;
-  transition:all .2s;
-}
-.btn-full:disabled { opacity:.4; cursor:not-allowed; }
+#admin-panel{display:none;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);
+  padding:18px;margin-bottom:12px;box-shadow:0 0 24px rgba(108,99,255,.15)}
+#admin-panel h3{font-family:'Syne',sans-serif;font-size:14.5px;margin-bottom:4px}
+#admin-panel .sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.4}
+.input-field,select.input-field{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;margin-bottom:9px;outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--accent)}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);
+  font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.tab.active{border-color:var(--accent);color:var(--text);background:rgba(108,99,255,.12)}
+.btn-full{width:100%;padding:14px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;
+  cursor:pointer;background:linear-gradient(135deg,var(--accent),#8c86ff);color:#fff;transition:all .2s}
+.btn-full:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);
+  font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:8px}
 
-/* TOAST */
-#toast {
-  position:fixed;
-  bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
-  background: var(--surface2);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:14px 20px;
-  max-width:340px;
-  width:90%;
-  text-align:center;
-  font-size:14px;
-  z-index:100;
-  opacity:0;
-  transition: all .3s;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-#toast.success { border-color:var(--entry); box-shadow:0 0 20px rgba(0,212,170,0.2); }
-#toast.error { border-color:var(--danger); box-shadow:0 0 20px rgba(255,71,87,0.2); }
-#toast.warn { border-color:var(--warn); }
+#toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(24px);background:var(--surface2);
+  border:1px solid var(--border);border-radius:14px;padding:14px 18px;max-width:360px;width:92%;text-align:center;
+  font-size:13.5px;line-height:1.45;z-index:100;opacity:0;transition:all .28s;box-shadow:0 8px 32px rgba(0,0,0,.55);pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{border-color:var(--entry)} #toast.error{border-color:var(--danger)} #toast.warn{border-color:var(--warn)}
 
-/* STATUS HOY */
-#today-status {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-bottom:14px;
-  display:none;
-}
-.status-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.status-row:last-child { margin-bottom:0; }
-.status-label { color:var(--muted); font-size:13px; }
-.status-val { font-family:'Syne',sans-serif; font-weight:600; font-size:14px; }
-.tag-in { color:var(--entry); }
-.tag-out { color:var(--exit); }
+.hist-item{background:var(--surface2);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:grid;grid-template-columns:1fr auto;gap:8px}
+.hist-name{font-weight:500;font-size:13.5px} .hist-sede{font-size:11px;color:var(--muted);margin-top:2px}
+.hist-times{font-family:'Syne',sans-serif;font-size:12.5px;text-align:right;white-space:nowrap}
+.hist-hours{font-size:11px;color:var(--accent2);text-align:right;margin-top:2px}
 
-/* HISTORIAL */
-#history-section { margin-top:8px; }
-#history-list { margin-top:10px; }
-.hist-item {
-  background:var(--surface2);
-  border-radius:10px;
-  padding:12px 14px;
-  margin-bottom:8px;
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:4px;
-}
-.hist-name { font-weight:500; font-size:14px; }
-.hist-sede { font-size:12px; color:var(--muted); }
-.hist-times { font-family:'Syne',sans-serif; font-size:13px; text-align:right; }
-.hist-hours { font-size:11px; color:var(--accent2); text-align:right; }
+table.rep{width:100%;border-collapse:collapse;font-size:12.5px}
+table.rep th{text-align:left;color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;
+  padding:6px 4px;border-bottom:1px solid var(--border)}
+table.rep td{padding:9px 4px;border-bottom:1px solid rgba(255,255,255,.04)}
+table.rep td.num{text-align:right;font-family:'Syne',sans-serif;font-weight:600}
+table.rep tr:last-child td{border-bottom:none}
+.empty{color:var(--muted);font-size:12.5px;text-align:center;padding:24px 10px;line-height:1.5}
 
-/* LOADING */
-#loading-overlay {
-  position:fixed; inset:0;
-  background:var(--bg);
-  z-index:200;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:16px;
-}
-.spinner {
-  width:44px; height:44px;
-  border:3px solid var(--border);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-#loading-overlay p { color:var(--muted); font-size:14px; }
+#loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.spinner{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-overlay p{color:var(--muted);font-size:13.5px;line-height:1.5;max-width:320px}
 
-/* NAV */
-nav {
-  position:fixed;
-  bottom:0; left:0; right:0;
-  background:rgba(10,10,15,0.95);
-  backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  display:flex;
-  z-index:50;
-}
-.nav-btn {
-  flex:1; padding:14px 8px 10px;
-  background:none;
-  border:none;
-  color:var(--muted);
-  font-family:'DM Sans',sans-serif;
-  font-size:11px;
-  cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:4px;
-  transition:color .2s;
-}
-.nav-btn.active { color:var(--accent); }
-.nav-icon { font-size:22px; }
-
-/* Panels */
-.panel { display:none; }
-.panel.active { display:block; }
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,.96);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:12px 8px 10px;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:20px}
+.panel{display:none} .panel.active{display:block}
 </style>
 </head>
 <body>
 
 <div id="loading-overlay">
   <div class="spinner"></div>
-  <p>Cargando sistema facial...</p>
+  <p id="loading-text">Iniciando…</p>
 </div>
 
 <div class="wrap">
   <header>
     <div class="logo-mark">CA</div>
     <h1>Control de Asistencia</h1>
-    <p>Sistema de marcación por rostro</p>
+    <p>Marcación por reconocimiento facial</p>
   </header>
 
-  <!-- PANEL MARCAR -->
+  <!-- ══════════ PANEL MARCAR ══════════ -->
   <div id="panel-mark" class="panel active">
     <div id="clock">--:--:--</div>
-    <div id="date-str">Cargando fecha...</div>
+    <div id="date-str">—</div>
 
-    <!-- Geo status -->
-    <div id="geo-status">
-      <span id="geo-dot"></span>
-      <span id="geo-text">Obteniendo ubicación...</span>
-    </div>
+    <div class="status-bar"><span class="dot" id="net-dot"></span><span id="net-text">Conectando con el servidor…</span></div>
+    <div class="status-bar"><span class="dot" id="geo-dot"></span><span id="geo-text">Obteniendo ubicación…</span></div>
 
-    <!-- Selección sede -->
     <div class="card">
-      <div class="card-title">Selecciona tu sede</div>
-      <div class="sede-grid" id="sede-grid">
-        <button class="sede-btn" data-sede="Guayabal - Julián" data-lat="6.2142" data-lng="-75.5913" onclick="selectSede(this)">
-          <strong>Guayabal</strong>Julián · Cl. 5A #58-4
-        </button>
-        <button class="sede-btn" data-sede="Laboratorio Robleado" data-lat="6.2723" data-lng="-75.6083" onclick="selectSede(this)">
-          <strong>Lab. Robleado</strong>Cl. 80A #72C-180
-        </button>
-        <button class="sede-btn" data-sede="Guayabal - Vampi" data-lat="6.2138" data-lng="-75.5910" onclick="selectSede(this)">
-          <strong>Guayabal</strong>Vampi · Cl. 17A #54-99
-        </button>
-        <button class="sede-btn" data-sede="Laboratorio Caribe" data-lat="6.2700" data-lng="-75.6070" onclick="selectSede(this)">
-          <strong>Lab. Caribe</strong>Cl. 75a #64D-17
-        </button>
-        <button class="sede-btn" data-sede="Centro" data-lat="6.2518" data-lng="-75.5636" onclick="selectSede(this)">
-          <strong>Centro</strong>Cra. 51 #45-70
-        </button>
-        <button class="sede-btn" data-sede="Laboratorio Itagüí" data-lat="6.1849" data-lng="-75.5990" onclick="selectSede(this)">
-          <strong>Lab. Itagüí</strong>Cra. 52A #45-11
-        </button>
-      </div>
+      <div class="card-title">Sede</div>
+      <div class="sede-grid" id="sede-grid"></div>
     </div>
 
-    <!-- Cámara -->
     <div id="camera-wrap">
       <video id="video" autoplay muted playsinline></video>
       <canvas id="canvas-overlay"></canvas>
-      <div class="scan-line" id="scan-line"></div>
-      <div id="cam-label">Apunta tu cara a la cámara</div>
+      <div id="cam-badge"><span class="dot ok"></span><span id="cam-badge-text"></span></div>
+      <button id="btn-cambiar" onclick="soltarUsuario()">No soy yo</button>
+      <div id="cam-label">Mira a la cámara</div>
     </div>
 
-    <!-- Panel registro nuevo -->
-    <div id="register-panel">
-      <h3>✨ Primera vez — Ingresa tu nombre</h3>
-      <input class="input-field" id="new-name" type="text" placeholder="Tu nombre completo" maxlength="60">
-      <button class="btn-full" id="btn-save-face" onclick="saveNewFace()">Guardar rostro y registrar</button>
-    </div>
-
-    <!-- Botones entrada / salida -->
     <div class="action-row">
-      <button class="btn btn-entry" id="btn-entry" onclick="doCheckIn()" disabled>
-        <span class="btn-icon">↗</span>
-        ENTRADA
-        <span class="btn-sub">Marcar llegada</span>
+      <button class="btn btn-entry" id="btn-entry" onclick="marcar('checkIn')" disabled>
+        <span class="btn-icon">↗</span>ENTRADA<span class="btn-sub">Marcar llegada</span>
       </button>
-      <button class="btn btn-exit" id="btn-exit" onclick="doCheckOut()" disabled>
-        <span class="btn-icon">↙</span>
-        SALIDA
-        <span class="btn-sub">Marcar salida</span>
+      <button class="btn btn-exit" id="btn-exit" onclick="marcar('checkOut')" disabled>
+        <span class="btn-icon">↙</span>SALIDA<span class="btn-sub">Marcar salida</span>
       </button>
+    </div>
+    <div id="hint">Selecciona tu sede y mira a la cámara.</div>
+
+    <div id="today-status">
+      <div class="card-title">Tu jornada</div>
+      <div class="status-row"><span class="status-label">Empleado</span><span class="status-val" id="st-name">—</span></div>
+      <div class="status-row"><span class="status-label">Fecha</span><span class="status-val" id="st-date">—</span></div>
+      <div class="status-row"><span class="status-label">Entrada</span><span class="status-val tag-in" id="st-in">—</span></div>
+      <div class="status-row"><span class="status-label">Salida</span><span class="status-val tag-out" id="st-out">—</span></div>
+      <div class="status-row"><span class="status-label">Horas laboradas</span><span class="status-val" id="st-hours">—</span></div>
+      <div class="status-row"><span class="status-label">Estado</span><span id="st-state">—</span></div>
     </div>
 
-    <!-- Estado hoy -->
-    <div id="today-status">
-      <div class="card-title">Tu registro de hoy</div>
-      <div class="status-row">
-        <span class="status-label">Empleado</span>
-        <span class="status-val" id="st-name">—</span>
+    <!-- Panel administrador -->
+    <div id="admin-panel">
+      <h3 id="admin-title">Registrar empleado nuevo</h3>
+      <div class="sub" id="admin-sub">Requiere el PIN de administrador.</div>
+      <div class="tabs">
+        <div class="tab active" id="tab-nuevo" onclick="modoAdmin('nuevo')">Empleado nuevo</div>
+        <div class="tab" id="tab-mejorar" onclick="modoAdmin('mejorar')">Mejorar rostro</div>
       </div>
-      <div class="status-row">
-        <span class="status-label">Entrada</span>
-        <span class="status-val tag-in" id="st-in">—</span>
+      <div id="admin-nuevo">
+        <input class="input-field" id="in-nombre" type="text" placeholder="Nombre completo" maxlength="60" autocomplete="off">
+        <input class="input-field" id="in-doc" type="text" placeholder="Documento (opcional)" maxlength="20" autocomplete="off">
       </div>
-      <div class="status-row">
-        <span class="status-label">Salida</span>
-        <span class="status-val tag-out" id="st-out">—</span>
+      <div id="admin-mejorar" style="display:none">
+        <select class="input-field" id="in-empleado"></select>
       </div>
-      <div class="status-row">
-        <span class="status-label">Horas laboradas</span>
-        <span class="status-val" id="st-hours">—</span>
-      </div>
+      <input class="input-field" id="in-pin" type="password" inputmode="numeric" placeholder="PIN de administrador" maxlength="12" autocomplete="off">
+      <button class="btn-full" id="btn-admin-ok" onclick="guardarRostro()">Capturar rostro y guardar</button>
+      <button class="btn-ghost" onclick="cerrarAdmin()">Cancelar</button>
     </div>
+    <button class="btn-ghost" id="btn-abrir-admin" onclick="abrirAdmin()" style="margin-bottom:8px">⚙ Registrar empleado / mejorar reconocimiento</button>
   </div>
 
-  <!-- PANEL HISTORIAL -->
+  <!-- ══════════ PANEL HISTORIAL ══════════ -->
   <div id="panel-hist" class="panel">
-    <div style="margin-top:10px;">
-      <div class="card-title">Registros recientes</div>
-      <div id="history-list">
-        <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Cargando historial...</p>
-      </div>
+    <div class="card-title" style="margin-top:8px">Registros recientes</div>
+    <div id="history-list"><p class="empty">Cargando…</p></div>
+    <button class="btn-ghost" onclick="cargarHistorial(true)">Actualizar</button>
+  </div>
+
+  <!-- ══════════ PANEL REPORTES ══════════ -->
+  <div id="panel-rep" class="panel">
+    <div class="card" style="margin-top:8px">
+      <div class="card-title" id="rep-sem-title">Esta semana</div>
+      <div id="rep-semana"><p class="empty">Cargando…</p></div>
     </div>
+    <div class="card">
+      <div class="card-title" id="rep-mes-title">Este mes</div>
+      <div id="rep-mes"><p class="empty">Cargando…</p></div>
+    </div>
+    <button class="btn-ghost" onclick="cargarReportes(true)">Actualizar</button>
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- NAV -->
 <nav>
-  <button class="nav-btn active" id="nav-mark" onclick="showPanel('mark')">
-    <span class="nav-icon">👁</span>Marcar
-  </button>
-  <button class="nav-btn" id="nav-hist" onclick="showPanel('hist')">
-    <span class="nav-icon">📋</span>Historial
-  </button>
+  <button class="nav-btn active" id="nav-mark" onclick="verPanel('mark')"><span class="nav-icon">👁</span>Marcar</button>
+  <button class="nav-btn" id="nav-hist" onclick="verPanel('hist')"><span class="nav-icon">📋</span>Historial</button>
+  <button class="nav-btn" id="nav-rep" onclick="verPanel('rep')"><span class="nav-icon">📊</span>Reportes</button>
 </nav>
 
-<!-- Face API CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
 <script>
-// ──────────────────────────────────────────────
-// CONFIG — Reemplaza con tu URL de Apps Script
-// ──────────────────────────────────────────────
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVqrXsXjrw90nSqeT7SC3ee6lQnCDnRp8Fd81HhlO451IWeWPAUKhma-sh7XUjCc4h/exec';
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN — lo ÚNICO que debes cambiar aquí es SCRIPT_URL.
+   Pega la URL /exec que te da Google al desplegar el Apps Script.
+   Las sedes y los parámetros viven en la hoja de cálculo.
+   ═══════════════════════════════════════════════════════════════ */
+var SCRIPT_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT_TERMINADA_EN_/exec';
 
-// ── Sedes con coordenadas reales ──────────────
-const SEDES = {
-  'Guayabal - Julián':    { lat: 6.214200, lng: -75.591300 },
-  'Laboratorio Robleado': { lat: 6.272300, lng: -75.608300 },
-  'Guayabal - Vampi':     { lat: 6.213800, lng: -75.591000 },
-  'Laboratorio Caribe':   { lat: 6.270000, lng: -75.607000 },
-  'Centro':               { lat: 6.251800, lng: -75.563600 },
-  'Laboratorio Itagüí':   { lat: 6.184900, lng: -75.599000 },
+/* Copia de respaldo de las sedes: solo se usa si el servidor no responde.
+   La lista buena vive en el Apps Script (constante SEDES). */
+var SEDES_RESPALDO = [
+  {nombre:'Guayabal - Julián',    corto:'Guayabal',      detalle:'Julián · Cl. 5A #58-4',  lat:6.2142, lng:-75.5913},
+  {nombre:'Guayabal - Vampi',     corto:'Guayabal',      detalle:'Vampi · Cl. 17A #54-99', lat:6.2138, lng:-75.5910},
+  {nombre:'Laboratorio Robleado', corto:'Lab. Robleado', detalle:'Cl. 80A #72C-180',       lat:6.2723, lng:-75.6083},
+  {nombre:'Laboratorio Caribe',   corto:'Lab. Caribe',   detalle:'Cl. 75A #64D-17',        lat:6.2700, lng:-75.6070},
+  {nombre:'Centro',               corto:'Centro',        detalle:'Cra. 51 #45-70',         lat:6.2518, lng:-75.5636},
+  {nombre:'Laboratorio Itagüí',   corto:'Lab. Itagüí',   detalle:'Cra. 52A #45-11',        lat:6.1849, lng:-75.5990}
+];
+
+/* ── Parámetros de reconocimiento (ajustables) ── */
+var FRAMES_PARA_CONFIRMAR = 4;     // detecciones seguidas de la misma persona
+var FRAMES_PARA_DESCONOCIDO = 12;  // detecciones seguidas sin match antes de ofrecer registro
+var SEGUNDOS_SESION = 60;          // tras confirmar el rostro, cuánto dura la sesión
+var MS_ENTRE_DETECCIONES = 250;    // ~4 análisis por segundo
+var COOLDOWN_MARCAR_MS = 4000;     // bloqueo tras marcar, evita doble registro
+
+/* ── Estado global ── */
+var S = {
+  sedes: [], sede: null, geo: null, distancia: null, geoOk: false,
+  empleados: [], modelos: false, umbral: 0.45, radio: 250, exigirGps: true,
+  usuario: null, estado: null, sesionHasta: 0,
+  ocupado: false, ultimaMarca: 0, online: false,
+  descriptorPendiente: null, framesMatch: 0, framesDesconocido: 0, ultimoId: null,
+  modoAdmin: 'nuevo', detenerLoop: false
 };
-const GEO_RADIUS = 1000; // metros
 
-// ── Estado ─────────────────────────────────────
-let currentUser = null;
-let currentSede = null;
-let userGeo = null;
-let faceDetectionInterval = null;
-let knownFaces = [];
-let detectMode = 'idle'; // idle | scanning | register
-let pendingDescriptor = null;
-let modelsLoaded = false;
-
-// ──────────────────────────────────────────────
-// CLOCK
-// ──────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  const t = now.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
-  const d = now.toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  document.getElementById('clock').textContent = t;
-  document.getElementById('date-str').textContent = d.charAt(0).toUpperCase() + d.slice(1);
+/* ═══════════════ RELOJ ═══════════════ */
+function tick(){
+  var n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  document.getElementById('date-str').textContent =
+    n.toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if (S.usuario && Date.now() > S.sesionHasta) soltarUsuario(true);
 }
-setInterval(updateClock, 1000);
-updateClock();
+setInterval(tick,1000); tick();
 
-// ──────────────────────────────────────────────
-// PANELS NAV
-// ──────────────────────────────────────────────
-function showPanel(name) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'hist') loadHistory();
-}
+/* ═══════════════ API ═══════════════
+   POST con Content-Type text/plain = petición "simple", sin preflight CORS.
+   Reintenta 2 veces ante fallos de red antes de rendirse.
+*/
+function api(params, intentos){
+  intentos = intentos === undefined ? 2 : intentos;
 
-// ──────────────────────────────────────────────
-// GEOLOCALIZACIÓN
-// ──────────────────────────────────────────────
-function startGeo() {
-  if (!navigator.geolocation) {
-    setGeoStatus('fail', 'GPS no disponible en este dispositivo');
-    return;
+  if (SCRIPT_URL.indexOf('script.google.com') < 0){
+    return Promise.resolve({success:false, code:'CONFIG',
+      message:'Falta configurar SCRIPT_URL en el index.html.'});
   }
-  navigator.geolocation.watchPosition(pos => {
-    userGeo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    checkGeoBySede();
-  }, err => {
-    setGeoStatus('fail', 'Activa el GPS para continuar');
-  }, { enableHighAccuracy: true, maximumAge: 5000 });
-}
 
-function setGeoStatus(type, text) {
-  const dot = document.getElementById('geo-dot');
-  dot.className = type;
-  document.getElementById('geo-text').textContent = text;
-}
+  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = setTimeout(function(){ if(ctrl) ctrl.abort(); }, 20000);
 
-function calcDist(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function checkGeoBySede() {
-  if (!userGeo || !currentSede) {
-    setGeoStatus('', 'Selecciona una sede');
-    return;
-  }
-  const coords = SEDES[currentSede];
-  const dist = calcDist(userGeo.lat, userGeo.lng, coords.lat, coords.lng);
-  const distText = dist < 1000 ? `${Math.round(dist)}m de la sede` : `${(dist/1000).toFixed(1)}km de la sede`;
-
-  if (dist <= GEO_RADIUS) {
-    setGeoStatus('ok', `✓ Dentro del rango · ${distText}`);
-    enableButtons(true);
-  } else {
-    setGeoStatus('fail', `⚠ Fuera del rango (${distText}) — máx ${GEO_RADIUS}m`);
-    enableButtons(false);
-  }
-}
-
-function enableButtons(ok) {
-  // Solo habilita si también hay un usuario detectado
-  const hasUser = !!currentUser;
-  document.getElementById('btn-entry').disabled = !(ok && hasUser);
-  document.getElementById('btn-exit').disabled = !(ok && hasUser);
-}
-
-// ──────────────────────────────────────────────
-// SEDE
-// ──────────────────────────────────────────────
-function selectSede(btn) {
-  document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentSede = btn.dataset.sede;
-  checkGeoBySede();
-}
-
-// ──────────────────────────────────────────────
-// FACE API — Cargar modelos desde CDN
-// ──────────────────────────────────────────────
-const MODEL_URL = './models';
-
-async function loadModels() {
-  try {
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-    ]);
-    modelsLoaded = true;
-    console.log('Modelos cargados');
-  } catch (e) {
-    console.error('Error cargando modelos:', e);
-  }
-}
-
-// ──────────────────────────────────────────────
-// CÁMARA
-// ──────────────────────────────────────────────
-async function startCamera() {
-  const video = document.getElementById('video');
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width:{ ideal:640 }, height:{ ideal:480 } },
-      audio: false
+  return fetch(SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(params),
+      redirect:'follow',
+      signal: ctrl ? ctrl.signal : undefined
+    })
+    .then(function(r){ clearTimeout(timer); return r.text(); })
+    .then(function(t){
+      try { return JSON.parse(t); }
+      catch(e){ return {success:false, code:'RESPUESTA',
+        message:'El servidor no devolvió datos válidos. Revisa que el Apps Script esté desplegado con acceso "Cualquier persona".'}; }
+    })
+    .catch(function(err){
+      clearTimeout(timer);
+      if (intentos > 0) return new Promise(function(res){ setTimeout(res,900); }).then(function(){ return api(params, intentos-1); });
+      return {success:false, code:'RED', message:'Sin conexión con el servidor. Revisa el internet y vuelve a intentar.'};
     });
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      const canvas = document.getElementById('canvas-overlay');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      startFaceDetection();
-    };
-  } catch (e) {
-    document.getElementById('cam-label').textContent = 'Permite el acceso a la cámara';
-  }
 }
 
-// ──────────────────────────────────────────────
-// DETECCIÓN FACIAL CONTINUA
-// ──────────────────────────────────────────────
-async function startFaceDetection() {
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas-overlay');
-  const ctx = canvas.getContext('2d');
-  const scanLine = document.getElementById('scan-line');
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize:224, scoreThreshold:0.5 });
+function setNet(ok, texto){
+  S.online = ok;
+  document.getElementById('net-dot').className = 'dot ' + (ok ? 'ok' : 'fail');
+  document.getElementById('net-text').textContent = texto;
+}
 
-  // Cargar empleados registrados
-  await loadKnownFaces();
+/* ═══════════════ PANELES ═══════════════ */
+function verPanel(n){
+  var p = document.querySelectorAll('.panel'), b = document.querySelectorAll('.nav-btn');
+  for (var i=0;i<p.length;i++) p[i].classList.remove('active');
+  for (var j=0;j<b.length;j++) b[j].classList.remove('active');
+  document.getElementById('panel-'+n).classList.add('active');
+  document.getElementById('nav-'+n).classList.add('active');
+  if (n==='hist') cargarHistorial();
+  if (n==='rep')  cargarReportes();
+}
 
-  let frameCount = 0;
-  detectMode = 'scanning';
-  scanLine.classList.add('active');
+/* ═══════════════ SEDES ═══════════════ */
+function pintarSedes(){
+  var g = document.getElementById('sede-grid');
+  g.innerHTML = '';
+  S.sedes.forEach(function(s){
+    var b = document.createElement('button');
+    b.className = 'sede-btn';
+    b.dataset.nombre = s.nombre;
+    b.innerHTML = '<strong>'+s.corto+'</strong>'+s.detalle+'<small class="dist"></small>';
+    b.onclick = function(){ elegirSede(s.nombre, true); };
+    g.appendChild(b);
+  });
+  var guardada = localStorage.getItem('sede');
+  if (guardada && S.sedes.some(function(s){return s.nombre===guardada;})) elegirSede(guardada);
+}
 
-  const loop = async () => {
-    if (!modelsLoaded) { requestAnimationFrame(loop); return; }
-    frameCount++;
-    if (frameCount % 8 !== 0) { requestAnimationFrame(loop); return; } // cada 8 frames
+function elegirSede(nombre, manual){
+  S.sede = nombre;
+  if (manual) localStorage.setItem('sede', nombre);
+  var b = document.querySelectorAll('.sede-btn');
+  for (var i=0;i<b.length;i++) b[i].classList.toggle('active', b[i].dataset.nombre === nombre);
+  revisarGeo();
+}
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ═══════════════ GPS ═══════════════ */
+function iniciarGeo(){
+  if (!navigator.geolocation){ setGeo('fail','Este dispositivo no tiene GPS'); return; }
+  navigator.geolocation.watchPosition(function(pos){
+    S.geo = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+    revisarGeo();
+  }, function(){
+    S.geo = null; S.geoOk = false;
+    setGeo('fail','Activa el GPS y permite la ubicación en el navegador');
+    refrescarBotones();
+  }, {enableHighAccuracy:true, maximumAge:10000, timeout:20000});
+}
 
-    const detections = await faceapi
-      .detectSingleFace(video, options)
-      .withFaceLandmarks(true)
-      .withFaceDescriptor();
+function setGeo(tipo, texto){
+  document.getElementById('geo-dot').className = 'dot ' + tipo;
+  document.getElementById('geo-text').textContent = texto;
+}
 
-    if (detections) {
-      const { box } = detections.detection;
-      // Espejo para canvas
-      const scaleX = canvas.width / video.videoWidth;
-      const scaleY = canvas.height / video.videoHeight;
-      const x = canvas.width - (box.x + box.width) * scaleX;
-      const y = box.y * scaleY;
-      const w = box.width * scaleX;
-      const h = box.height * scaleY;
+function distancia(a,b,c,d){
+  var R=6371000, dLat=(c-a)*Math.PI/180, dLng=(d-b)*Math.PI/180;
+  var x = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
 
-      // Dibujar caja
-      ctx.strokeStyle = '#00d4aa';
-      ctx.lineWidth = 2;
-      ctx.shadowColor = '#00d4aa';
-      ctx.shadowBlur = 8;
-      ctx.strokeRect(x, y, w, h);
-      ctx.shadowBlur = 0;
+function revisarGeo(){
+  if (!S.geo){ setGeo('wait','Obteniendo ubicación…'); S.geoOk=false; refrescarBotones(); return; }
 
-      // Reconocer
-      const descriptor = detections.descriptor;
-      const match = findBestMatch(descriptor);
-
-      if (match && match.distance < 0.45) {
-        // Cara conocida
-        currentUser = match.employee;
-        document.getElementById('cam-label').textContent = `✓ ${match.employee.name}`;
-        ctx.fillStyle = 'rgba(0,212,170,0.15)';
-        ctx.fillRect(x, y, w, h);
-        // Nombre encima
-        ctx.fillStyle = '#00d4aa';
-        ctx.font = 'bold 13px DM Sans, sans-serif';
-        ctx.fillText(match.employee.name, x, y - 6);
-        checkGeoBySede();
-        hideRegisterPanel();
-        loadTodayStatus();
-      } else {
-        // Cara desconocida
-        if (detectMode === 'scanning') {
-          currentUser = null;
-          pendingDescriptor = descriptor;
-          document.getElementById('cam-label').textContent = 'Cara no reconocida — ¿Eres nuevo?';
-          ctx.strokeStyle = '#6c63ff';
-          ctx.strokeRect(x, y, w, h);
-          showRegisterPanel();
-          enableButtons(false);
-        }
-      }
-    } else {
-      document.getElementById('cam-label').textContent = 'Apunta tu cara a la cámara';
-      if (detectMode !== 'register') {
-        currentUser = null;
-        enableButtons(false);
-      }
+  // Marca la sede más cercana y muestra distancias
+  var mejor = null;
+  var btns = document.querySelectorAll('.sede-btn');
+  S.sedes.forEach(function(s, i){
+    var d = distancia(S.geo.lat, S.geo.lng, s.lat, s.lng);
+    if (!mejor || d < mejor.d) mejor = {s:s, d:d};
+    if (btns[i]){
+      btns[i].classList.toggle('cerca', d <= S.radio);
+      var lbl = btns[i].querySelector('.dist');
+      if (lbl) lbl.textContent = d < 1000 ? Math.round(d)+' m' : (d/1000).toFixed(1)+' km';
     }
-
-    requestAnimationFrame(loop);
-  };
-  requestAnimationFrame(loop);
-}
-
-function findBestMatch(descriptor) {
-  if (!knownFaces.length) return null;
-  let best = null;
-  let bestDist = Infinity;
-  for (const emp of knownFaces) {
-    if (!emp.descriptor) continue;
-    const dist = faceapi.euclideanDistance(descriptor, emp.descriptor);
-    if (dist < bestDist) { bestDist = dist; best = { employee: emp, distance: dist }; }
-  }
-  return best;
-}
-
-// ──────────────────────────────────────────────
-// REGISTRO NUEVO EMPLEADO
-// ──────────────────────────────────────────────
-function showRegisterPanel() {
-  document.getElementById('register-panel').style.display = 'block';
-  detectMode = 'register';
-}
-function hideRegisterPanel() {
-  document.getElementById('register-panel').style.display = 'none';
-  detectMode = 'scanning';
-}
-
-async function saveNewFace() {
-  const name = document.getElementById('new-name').value.trim();
-  if (!name) { showToast('Escribe tu nombre', 'warn'); return; }
-  if (!pendingDescriptor) { showToast('No se detecta la cara', 'error'); return; }
-  if (!currentSede) { showToast('Selecciona una sede primero', 'warn'); return; }
-
-  const btn = document.getElementById('btn-save-face');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-
-  const descriptorArr = Array.from(pendingDescriptor);
-  const res = await apiCall({
-    action: 'register',
-    name,
-    faceDescriptor: JSON.stringify(descriptorArr),
-    sede: currentSede
   });
 
-  if (res.success) {
-    showToast(res.message, 'success');
-    await loadKnownFaces();
-    hideRegisterPanel();
-    document.getElementById('new-name').value = '';
-    currentUser = { id: res.id, name, faceDescriptor: JSON.stringify(descriptorArr) };
-    checkGeoBySede();
-  } else {
-    showToast(res.message, 'error');
-  }
-  btn.disabled = false;
-  btn.textContent = 'Guardar rostro y registrar';
+  if (!S.sede && mejor && mejor.d <= S.radio) elegirSede(mejor.s.nombre);
+
+  if (!S.sede){ setGeo('wait','Selecciona tu sede'); S.geoOk=false; refrescarBotones(); return; }
+
+  var sede = null;
+  S.sedes.forEach(function(s){ if (s.nombre === S.sede) sede = s; });
+  if (!sede){ S.geoOk=false; refrescarBotones(); return; }
+
+  var d = distancia(S.geo.lat, S.geo.lng, sede.lat, sede.lng);
+  S.distancia = Math.round(d);
+  var txt = d < 1000 ? Math.round(d)+' m' : (d/1000).toFixed(1)+' km';
+
+  if (!S.exigirGps){ S.geoOk = true; setGeo('ok','GPS informativo · '+txt+' de la sede'); }
+  else if (d <= S.radio){ S.geoOk = true; setGeo('ok','Dentro del rango · '+txt+' de la sede'); }
+  else { S.geoOk = false; setGeo('fail','Fuera del rango: '+txt+' (máx '+S.radio+' m)'); }
+
+  refrescarBotones();
 }
 
-// ──────────────────────────────────────────────
-// CARGAR CARAS CONOCIDAS
-// ──────────────────────────────────────────────
-async function loadKnownFaces() {
-  const res = await apiCall({ action: 'getEmployees' });
-  if (res.success) {
-    knownFaces = res.employees.map(emp => {
-      try {
-        const arr = JSON.parse(emp.faceDescriptor);
-        emp.descriptor = new Float32Array(arr);
-      } catch(e) { emp.descriptor = null; }
-      return emp;
+/* ═══════════════ CÁMARA + RECONOCIMIENTO ═══════════════ */
+function cargarModelos(){
+  return Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+    faceapi.nets.faceLandmark68TinyNet.loadFromUri('./models'),
+    faceapi.nets.faceRecognitionNet.loadFromUri('./models')
+  ]).then(function(){ S.modelos = true; });
+}
+
+function iniciarCamara(){
+  var v = document.getElementById('video');
+  return navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false})
+    .then(function(stream){
+      v.srcObject = stream;
+      return new Promise(function(res){
+        v.onloadedmetadata = function(){
+          var c = document.getElementById('canvas-overlay');
+          c.width = v.videoWidth; c.height = v.videoHeight;
+          v.play(); res();
+        };
+      });
     });
-  }
 }
 
-// ──────────────────────────────────────────────
-// CHECK IN / OUT
-// ──────────────────────────────────────────────
-async function doCheckIn() {
-  if (!currentUser || !currentSede || !userGeo) return;
-  document.getElementById('btn-entry').disabled = true;
-  const res = await apiCall({
-    action: 'checkIn',
-    employeeId: currentUser.id,
-    employeeName: currentUser.name,
-    sede: currentSede,
-    lat: userGeo.lat,
-    lng: userGeo.lng
+function cargarEmpleados(){
+  return api({action:'getEmployees'}).then(function(r){
+    if (!r.success) return false;
+    S.empleados = r.empleados.map(function(e){
+      e.descs = (e.descriptores||[]).map(function(d){ return new Float32Array(d); });
+      return e;
+    });
+    try { localStorage.setItem('empleados_cache', JSON.stringify(r.empleados)); } catch(e){}
+    llenarSelectEmpleados();
+    return true;
   });
-  showToast(res.message, res.success ? 'success' : 'error');
-  if (res.success) loadTodayStatus();
-  document.getElementById('btn-entry').disabled = false;
 }
 
-async function doCheckOut() {
-  if (!currentUser || !currentSede) return;
-  document.getElementById('btn-exit').disabled = true;
-  const res = await apiCall({
-    action: 'checkOut',
-    employeeId: currentUser.id,
-    employeeName: currentUser.name,
-    sede: currentSede
+function cargarEmpleadosCache(){
+  try{
+    var raw = localStorage.getItem('empleados_cache');
+    if (!raw) return;
+    S.empleados = JSON.parse(raw).map(function(e){
+      e.descs = (e.descriptores||[]).map(function(d){ return new Float32Array(d); });
+      return e;
+    });
+    llenarSelectEmpleados();
+  }catch(e){}
+}
+
+function llenarSelectEmpleados(){
+  var sel = document.getElementById('in-empleado');
+  sel.innerHTML = '<option value="">— Selecciona el empleado —</option>';
+  S.empleados.forEach(function(e){
+    var o = document.createElement('option');
+    o.value = e.id; o.textContent = e.nombre;
+    sel.appendChild(o);
   });
-  showToast(res.message, res.success ? 'success' : 'error');
-  if (res.success) loadTodayStatus();
-  document.getElementById('btn-exit').disabled = false;
 }
 
-// ──────────────────────────────────────────────
-// STATUS HOY
-// ──────────────────────────────────────────────
-async function loadTodayStatus() {
-  if (!currentUser) return;
-  const res = await apiCall({ action: 'getTodayRecord', employeeId: currentUser.id });
-  const box = document.getElementById('today-status');
-  if (res.success && res.record) {
-    box.style.display = 'block';
-    document.getElementById('st-name').textContent = res.record.name;
-    document.getElementById('st-in').textContent = res.record.checkIn || '—';
-    document.getElementById('st-out').textContent = res.record.checkOut || 'Pendiente';
-    document.getElementById('st-hours').textContent = res.record.hoursWorked || '—';
+function mejorMatch(desc){
+  var mejor = null;
+  for (var i=0;i<S.empleados.length;i++){
+    var e = S.empleados[i];
+    for (var j=0;j<e.descs.length;j++){
+      if (!e.descs[j] || e.descs[j].length !== desc.length) continue;
+      var d = faceapi.euclideanDistance(e.descs[j], desc);
+      if (!mejor || d < mejor.d) mejor = {e:e, d:d};
+    }
   }
+  return mejor;
 }
 
-// ──────────────────────────────────────────────
-// HISTORIAL
-// ──────────────────────────────────────────────
-async function loadHistory() {
-  const list = document.getElementById('history-list');
-  list.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Cargando...</p>';
-  const res = await apiCall({ action: 'getHistory' });
-  if (!res.success || !res.records.length) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Sin registros aún</p>';
+/** Bucle de detección: NUNCA llama a la API. Solo reconoce y dibuja. */
+function loopDeteccion(){
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('canvas-overlay');
+  var ctx = canvas.getContext('2d');
+  var opts = new faceapi.TinyFaceDetectorOptions({inputSize:224, scoreThreshold:0.5});
+
+  function ciclo(){
+    if (S.detenerLoop || !S.modelos || video.readyState < 2){
+      setTimeout(ciclo, MS_ENTRE_DETECCIONES); return;
+    }
+    faceapi.detectSingleFace(video, opts).withFaceLandmarks(true).withFaceDescriptor()
+      .then(function(det){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        if (!det){
+          S.framesMatch = 0;
+          if (!S.usuario){
+            S.framesDesconocido = 0;
+            etiqueta('Mira a la cámara');
+          }
+          setTimeout(ciclo, MS_ENTRE_DETECCIONES); return;
+        }
+
+        // Caja (espejada, igual que el video)
+        var b = det.detection.box;
+        var x = canvas.width - (b.x + b.width), y = b.y;
+        S.descriptorPendiente = det.descriptor;
+
+        var m = mejorMatch(det.descriptor);
+        var reconocido = m && m.d < S.umbral;
+
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = reconocido ? '#00d4aa' : '#ffa502';
+        ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 10;
+        ctx.strokeRect(x, y, b.width, b.height);
+        ctx.shadowBlur = 0;
+
+        if (reconocido){
+          S.framesDesconocido = 0;
+          if (S.ultimoId === m.e.id) S.framesMatch++;
+          else { S.ultimoId = m.e.id; S.framesMatch = 1; }
+
+          if (!S.usuario && S.framesMatch >= FRAMES_PARA_CONFIRMAR){
+            confirmarUsuario(m.e);
+          } else if (!S.usuario){
+            etiqueta('Reconociendo a ' + m.e.nombre + '… ' + S.framesMatch + '/' + FRAMES_PARA_CONFIRMAR);
+          } else {
+            S.sesionHasta = Date.now() + SEGUNDOS_SESION*1000; // sigue frente a la cámara: renueva
+          }
+        } else {
+          S.framesMatch = 0;
+          if (!S.usuario){
+            S.framesDesconocido++;
+            etiqueta(S.framesDesconocido >= FRAMES_PARA_DESCONOCIDO
+              ? 'Rostro no registrado — usa ⚙ abajo'
+              : 'Rostro no reconocido…');
+          }
+        }
+        setTimeout(ciclo, MS_ENTRE_DETECCIONES);
+      })
+      .catch(function(){ setTimeout(ciclo, MS_ENTRE_DETECCIONES*2); });
+  }
+  ciclo();
+}
+
+function etiqueta(t){ document.getElementById('cam-label').textContent = t; }
+
+/** Se confirma UNA vez y solo entonces se consulta el servidor. */
+function confirmarUsuario(emp){
+  S.usuario = emp;
+  S.sesionHasta = Date.now() + SEGUNDOS_SESION*1000;
+  document.getElementById('cam-badge').classList.add('show');
+  document.getElementById('cam-badge-text').textContent = emp.nombre;
+  document.getElementById('btn-cambiar').classList.add('show');
+  etiqueta('Identificado: ' + emp.nombre);
+  cerrarAdmin();
+  cargarEstado();
+}
+
+function soltarUsuario(porTiempo){
+  S.usuario = null; S.estado = null; S.framesMatch = 0; S.ultimoId = null;
+  document.getElementById('cam-badge').classList.remove('show');
+  document.getElementById('btn-cambiar').classList.remove('show');
+  document.getElementById('today-status').style.display = 'none';
+  etiqueta(porTiempo ? 'Sesión cerrada — mira a la cámara' : 'Mira a la cámara');
+  refrescarBotones();
+}
+
+/* ═══════════════ ESTADO DEL DÍA ═══════════════ */
+function cargarEstado(){
+  if (!S.usuario) return Promise.resolve();
+  return api({action:'getTodayRecord', empleadoId:S.usuario.id}).then(function(r){
+    if (!r.success){ setNet(false, r.message || 'Error del servidor'); refrescarBotones(); return; }
+    setNet(true, 'Conectado');
+    S.estado = r;
+    pintarEstado(r);
+    refrescarBotones();
+  });
+}
+
+function pintarEstado(r){
+  var caja = document.getElementById('today-status');
+  caja.style.display = 'block';
+  document.getElementById('st-name').textContent = r.nombre || '—';
+
+  var reg = r.registro;
+  if (!reg){
+    document.getElementById('st-date').textContent  = hoyTexto();
+    document.getElementById('st-in').textContent    = '—';
+    document.getElementById('st-out').textContent   = '—';
+    document.getElementById('st-hours').textContent = '—';
+    document.getElementById('st-state').innerHTML   = '<span class="chip">Sin marcar</span>';
     return;
   }
-  list.innerHTML = res.records.map(r => `
-    <div class="hist-item">
-      <div>
-        <div class="hist-name">${r.name}</div>
-        <div class="hist-sede">${r.sede} · ${r.date}</div>
-      </div>
-      <div>
-        <div class="hist-times">
-          <span style="color:var(--entry)">${r.checkIn || '—'}</span>
-          ${r.checkOut ? `<span style="color:var(--muted)"> → </span><span style="color:var(--exit)">${r.checkOut}</span>` : ''}
-        </div>
-        <div class="hist-hours">${r.hoursWorked || ''}</div>
-      </div>
-    </div>
-  `).join('');
+  document.getElementById('st-date').textContent  = reg.fecha + (reg.dia ? ' · '+reg.dia : '');
+  document.getElementById('st-in').textContent    = reg.entrada || '—';
+  document.getElementById('st-out').textContent   = reg.salida  || 'Pendiente';
+  document.getElementById('st-hours').textContent = reg.horasTexto || (reg.estado==='ABIERTO' ? 'En curso' : '—');
+
+  var clase = reg.estado==='COMPLETO' ? 'completo' : (reg.estado==='ABIERTO' ? 'abierto' : 'pendiente');
+  var texto = {COMPLETO:'Jornada completa', ABIERTO:'En turno', PENDIENTE:'Falta salida', ANOMALIA:'Revisar'}[reg.estado] || reg.estado;
+  document.getElementById('st-state').innerHTML = '<span class="chip '+clase+'">'+texto+'</span>';
 }
 
-// ──────────────────────────────────────────────
-// API CALL
-// ──────────────────────────────────────────────
-async function apiCall(params) {
-  try {
-    const url = new URL(SCRIPT_URL);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), { redirect: 'follow' });
-    return await res.json();
-  } catch (e) {
-    return { success: false, message: 'Error de conexión. Revisa el SCRIPT_URL.' };
+function hoyTexto(){
+  var n = new Date();
+  return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);
+}
+
+/* ═══════════════ BOTONES ═══════════════ */
+function refrescarBotones(){
+  var be = document.getElementById('btn-entry'), bs = document.getElementById('btn-exit');
+  var enCooldown = Date.now() - S.ultimaMarca < COOLDOWN_MARCAR_MS;
+
+  var base = !S.ocupado && !enCooldown && !!S.usuario && !!S.sede && (S.geoOk || !S.exigirGps) && S.online;
+  var puedeEntrar = base && (!S.estado || S.estado.puedeEntrar);
+  var puedeSalir  = base && !!S.estado && S.estado.puedeSalir;
+
+  be.disabled = !puedeEntrar;
+  bs.disabled = !puedeSalir;
+
+  var h = document.getElementById('hint');
+  if (S.ocupado)            h.textContent = 'Enviando…';
+  else if (!S.online)       h.textContent = 'Sin conexión con el servidor.';
+  else if (!S.sede)         h.textContent = 'Selecciona tu sede.';
+  else if (!S.usuario)      h.textContent = 'Mira a la cámara para identificarte.';
+  else if (S.exigirGps && !S.geoOk) h.textContent = 'Debes estar dentro del rango de la sede para marcar.';
+  else if (enCooldown)      h.textContent = 'Registro guardado. Espera unos segundos…';
+  else if (puedeSalir)      h.textContent = 'Turno abierto desde las ' + (S.estado.registro ? S.estado.registro.entrada : '') + '. Marca tu SALIDA al terminar.';
+  else if (puedeEntrar)     h.textContent = 'Todo listo, ' + S.usuario.nombre + '. Marca tu ENTRADA.';
+  else if (S.estado && S.estado.registro && S.estado.registro.estado === 'COMPLETO')
+                            h.textContent = 'Ya completaste tu jornada de hoy (' + S.estado.registro.horasTexto + ').';
+  else                      h.textContent = '';
+}
+setInterval(refrescarBotones, 1000);
+
+/* ═══════════════ MARCAR ═══════════════ */
+function marcar(accion){
+  if (S.ocupado || !S.usuario) return;
+  if (Date.now() - S.ultimaMarca < COOLDOWN_MARCAR_MS) return;
+
+  S.ocupado = true;
+  S.ultimaMarca = Date.now();
+  refrescarBotones();
+  toast(accion==='checkIn' ? 'Registrando entrada…' : 'Registrando salida…');
+
+  api({
+    action: accion,
+    empleadoId: S.usuario.id,
+    sede: S.sede,
+    lat: S.geo ? S.geo.lat : '',
+    lng: S.geo ? S.geo.lng : ''
+  }).then(function(r){
+    S.ocupado = false;
+    if (r.success){ setNet(true,'Conectado'); toast(r.message,'success'); }
+    else {
+      if (r.code === 'RED' || r.code === 'RESPUESTA') setNet(false, r.message);
+      toast(r.message, r.code==='YA_ENTRO'||r.code==='YA_SALIO' ? 'warn' : 'error');
+      S.ultimaMarca = 0; // un rechazo no debe bloquear el reintento
+    }
+    return cargarEstado();
+  }).then(function(){ refrescarBotones(); });
+}
+
+/* ═══════════════ ADMIN: registrar / mejorar ═══════════════ */
+function abrirAdmin(){
+  document.getElementById('admin-panel').style.display = 'block';
+  document.getElementById('btn-abrir-admin').style.display = 'none';
+  modoAdmin(S.usuario ? 'mejorar' : 'nuevo');
+  if (S.usuario) document.getElementById('in-empleado').value = S.usuario.id;
+}
+function cerrarAdmin(){
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('btn-abrir-admin').style.display = 'block';
+  document.getElementById('in-pin').value = '';
+}
+function modoAdmin(m){
+  S.modoAdmin = m;
+  document.getElementById('tab-nuevo').classList.toggle('active', m==='nuevo');
+  document.getElementById('tab-mejorar').classList.toggle('active', m==='mejorar');
+  document.getElementById('admin-nuevo').style.display   = m==='nuevo'   ? 'block':'none';
+  document.getElementById('admin-mejorar').style.display = m==='mejorar' ? 'block':'none';
+  document.getElementById('admin-title').textContent = m==='nuevo' ? 'Registrar empleado nuevo' : 'Mejorar reconocimiento';
+  document.getElementById('admin-sub').textContent = m==='nuevo'
+    ? 'Mira a la cámara y presiona guardar. Requiere PIN de administrador.'
+    : 'Agrega otra muestra del rostro de un empleado ya registrado (útil con gafas, barba o luz distinta).';
+}
+
+function guardarRostro(){
+  var pin = document.getElementById('in-pin').value.trim();
+  if (!pin) return toast('Escribe el PIN de administrador','warn');
+  if (!S.descriptorPendiente) return toast('No se detecta ningún rostro en la cámara','warn');
+
+  var btn = document.getElementById('btn-admin-ok');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  var desc = JSON.stringify(Array.prototype.slice.call(S.descriptorPendiente).map(function(n){
+    return Math.round(n*100000)/100000;
+  }));
+
+  var params;
+  if (S.modoAdmin === 'nuevo'){
+    var nombre = document.getElementById('in-nombre').value.trim();
+    if (nombre.length < 3){ btn.disabled=false; btn.textContent='Capturar rostro y guardar'; return toast('Escribe el nombre completo','warn'); }
+    params = {action:'register', nombre:nombre, documento:document.getElementById('in-doc').value.trim(),
+              sede:S.sede||'', descriptor:desc, pin:pin};
+  } else {
+    var id = document.getElementById('in-empleado').value;
+    if (!id){ btn.disabled=false; btn.textContent='Capturar rostro y guardar'; return toast('Selecciona el empleado','warn'); }
+    params = {action:'addFace', empleadoId:id, descriptor:desc, pin:pin};
   }
+
+  api(params).then(function(r){
+    btn.disabled = false; btn.textContent = 'Capturar rostro y guardar';
+    toast(r.message, r.success ? 'success' : 'error');
+    if (r.success){
+      document.getElementById('in-nombre').value = '';
+      document.getElementById('in-doc').value = '';
+      document.getElementById('in-pin').value = '';
+      cerrarAdmin();
+      return cargarEmpleados();
+    }
+  });
 }
 
-// ──────────────────────────────────────────────
-// TOAST
-// ──────────────────────────────────────────────
-let toastTimer;
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
+/* ═══════════════ HISTORIAL ═══════════════ */
+var histCache = 0;
+function cargarHistorial(forzar){
+  if (!forzar && Date.now() - histCache < 30000) return;
+  histCache = Date.now();
+  var lista = document.getElementById('history-list');
+  lista.innerHTML = '<p class="empty">Cargando…</p>';
+  api({action:'getHistory'}).then(function(r){
+    if (!r.success){ lista.innerHTML = '<p class="empty">'+(r.message||'No se pudo cargar')+'</p>'; return; }
+    if (!r.registros.length){ lista.innerHTML = '<p class="empty">Todavía no hay registros.</p>'; return; }
+    lista.innerHTML = r.registros.map(function(x){
+      var estado = x.estado==='PENDIENTE' ? ' · <span style="color:var(--danger)">falta salida</span>'
+                 : x.estado==='ABIERTO'   ? ' · <span style="color:var(--warn)">en turno</span>' : '';
+      return '<div class="hist-item"><div>'+
+        '<div class="hist-name">'+esc(x.nombre)+'</div>'+
+        '<div class="hist-sede">'+esc(x.sede)+' · '+x.fecha+estado+'</div></div>'+
+        '<div><div class="hist-times"><span style="color:var(--entry)">'+(x.entrada||'—')+'</span>'+
+        (x.salida ? ' <span style="color:var(--muted)">→</span> <span style="color:var(--exit)">'+x.salida+'</span>' : '')+
+        '</div><div class="hist-hours">'+(x.horasTexto||'')+'</div></div></div>';
+    }).join('');
+  });
+}
+
+/* ═══════════════ REPORTES ═══════════════ */
+var repCache = 0;
+function cargarReportes(forzar){
+  if (!forzar && Date.now() - repCache < 30000) return;
+  repCache = Date.now();
+  api({action:'getReports'}).then(function(r){
+    if (!r.success){
+      document.getElementById('rep-semana').innerHTML = '<p class="empty">'+(r.message||'No se pudo cargar')+'</p>';
+      document.getElementById('rep-mes').innerHTML = '';
+      return;
+    }
+    document.getElementById('rep-sem-title').textContent = 'Semana '+r.semana.clave+' · '+r.semana.desde+' a '+r.semana.hasta;
+    document.getElementById('rep-mes-title').textContent = 'Mes '+r.mes.clave;
+    document.getElementById('rep-semana').innerHTML = tabla(r.semana.filas);
+    document.getElementById('rep-mes').innerHTML    = tabla(r.mes.filas);
+  });
+}
+
+function tabla(filas){
+  if (!filas || !filas.length) return '<p class="empty">Sin horas registradas todavía.</p>';
+  var total = 0;
+  var cuerpo = filas.map(function(f){
+    total += f.horas;
+    return '<tr><td>'+esc(f.nombre)+(f.pendientes ? ' <span style="color:var(--danger);font-size:10px">('+f.pendientes+' sin salida)</span>' : '')+
+           '</td><td class="num">'+f.dias+'</td><td class="num">'+f.horasTexto+'</td></tr>';
+  }).join('');
+  return '<table class="rep"><thead><tr><th>Empleado</th><th style="text-align:right">Días</th><th style="text-align:right">Horas</th></tr></thead>'+
+         '<tbody>'+cuerpo+'</tbody>'+
+         '<tfoot><tr><td style="padding-top:10px;color:var(--muted)">Total</td><td class="num" style="padding-top:10px">—</td>'+
+         '<td class="num" style="padding-top:10px;color:var(--accent2)">'+(Math.round(total*100)/100)+' h</td></tr></tfoot></table>';
+}
+
+function esc(t){
+  return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════ TOAST ═══════════════ */
+var toastTimer;
+function toast(msg, tipo){
+  var t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'show ' + type;
+  t.className = 'show ' + (tipo||'');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = ''; }, 4500);
+  toastTimer = setTimeout(function(){ t.className=''; }, 5000);
 }
 
-// ──────────────────────────────────────────────
-// INIT
-// ──────────────────────────────────────────────
-async function init() {
-  const overlay = document.getElementById('loading-overlay');
-  overlay.querySelector('p').textContent = 'Cargando modelos de IA...';
-  await loadModels();
-  overlay.querySelector('p').textContent = 'Iniciando cámara...';
-  await startCamera();
-  startGeo();
-  overlay.style.transition = 'opacity .4s';
-  overlay.style.opacity = '0';
-  setTimeout(() => overlay.style.display = 'none', 400);
+/* ═══════════════ ARRANQUE ═══════════════ */
+function paso(txt){ document.getElementById('loading-text').textContent = txt; }
+
+function iniciar(){
+  paso('Conectando con el servidor…');
+  cargarEmpleadosCache();
+
+  api({action:'ping'}).then(function(r){
+    if (r.success){
+      setNet(true, 'Conectado · servidor ' + (r.hora||''));
+      S.sedes = (r.sedes && r.sedes.length) ? r.sedes : SEDES_RESPALDO;
+      if (r.config){ S.radio = r.config.radio || 250; S.exigirGps = r.config.exigirGps !== false; S.umbral = r.config.umbralRostro || 0.45; }
+    } else {
+      setNet(false, r.message || 'Sin conexión');
+      S.sedes = SEDES_RESPALDO;
+    }
+    pintarSedes();
+    paso('Cargando empleados…');
+    return cargarEmpleados();
+  }).then(function(){
+    paso('Cargando reconocimiento facial…');
+    return cargarModelos();
+  }).then(function(){
+    paso('Iniciando cámara…');
+    return iniciarCamara();
+  }).then(function(){
+    iniciarGeo();
+    loopDeteccion();
+    ocultarCarga();
+  }).catch(function(err){
+    console.error(err);
+    paso('No se pudo iniciar: ' + (err && err.message ? err.message : err) +
+         '. Revisa los permisos de cámara y que la página se abra por HTTPS.');
+    setTimeout(ocultarCarga, 4000);
+    iniciarGeo();
+  });
 }
 
-init();
+function ocultarCarga(){
+  var o = document.getElementById('loading-overlay');
+  o.style.transition = 'opacity .4s';
+  o.style.opacity = '0';
+  setTimeout(function(){ o.style.display = 'none'; }, 400);
+}
+
+// Al volver a la app, refresca el estado del empleado activo
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden && S.usuario) cargarEstado();
+});
+
+iniciar();
 </script>
 </body>
 </html>
