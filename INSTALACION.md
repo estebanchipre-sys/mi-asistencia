@@ -1,168 +1,174 @@
-# Instalación paso a paso
+# Estado del sistema y cómo mantenerlo
 
-Tiempo estimado: **20 minutos**. No necesitas saber programar, solo copiar y pegar.
-
-> **Por qué fallaba antes:** la URL del Apps Script que tenía el `index.html`
-> (`AKfycbzVqrXs…/exec`) responde **404**. La app enviaba las marcaciones a una
-> dirección que ya no existe, por eso los registros se perdían o se duplicaban.
-> El paso 5 arregla eso de raíz.
+**El sistema ya quedó instalado y funcionando el 30 de agosto de 2026.**
+Este documento es para el día a día: qué hay montado, cómo se cambia y qué
+hacer cuando algo falle.
 
 ---
 
-## Paso 1 — Abre el editor de Apps Script
+## Qué quedó montado
 
-1. Abre tu hoja de cálculo de asistencia.
-2. Menú **Extensiones → Apps Script**.
-3. Se abre una pestaña nueva con un archivo llamado `Código.gs`.
+| Pieza | Dónde está |
+|---|---|
+| **App** (la que abren en las sedes) | https://estebanchipre-sys.github.io/mi-asistencia/ |
+| **Backend** | Proyecto de Apps Script **"Control de Asistencia v2"**, en la cuenta estebanchipre@gmail.com |
+| **URL del backend** | `https://script.google.com/macros/s/AKfycbwTVavs23gzqav9OpKSn0l_3mWzlPY2euIQFiI-HpQbzP2PHwFZZFD9DDexHG7XBio/exec` |
+| **Base de datos** | La hoja **ControlAsistencia** de siempre |
+| **Código fuente** | Este repositorio, `apps-script/Codigo.gs` e `index.html` |
 
-## Paso 2 — Pega el código nuevo
+### Por qué el backend es un proyecto independiente
 
-1. Selecciona **todo** el contenido de `Código.gs` y bórralo.
-2. Abre el archivo `apps-script/Codigo.gs` que te entregué, copia **todo** y pégalo ahí.
-3. Presiona el ícono de **guardar** (💾).
+El Apps Script que estaba **vinculado** a la hoja desapareció — por eso la URL
+anterior respondía **404** y las marcaciones se perdían. El nuevo backend es un
+proyecto **independiente** que apunta a la hoja por su ID (la constante
+`ID_HOJA` al inicio de `Codigo.gs`). Así, aunque alguien toque el vínculo de la
+hoja, el sistema sigue funcionando.
 
-## Paso 3 — Zona horaria del proyecto
+### Hojas nuevas en la hoja de cálculo
 
-1. En el menú de la izquierda: **⚙ Configuración del proyecto**.
-2. Marca **Mostrar el archivo de manifiesto `appsscript.json`**.
-3. Vuelve al **Editor**, abre `appsscript.json` y confirma que diga:
-   ```json
-   "timeZone": "America/Bogota"
-   ```
-   Si dice otra cosa, cámbialo y guarda.
+| Hoja | Para qué sirve |
+|---|---|
+| **Empleados** | Quiénes son y sus muestras de rostro |
+| **Registros** | La base cruda: una fila por jornada, con GPS y auditoría |
+| **Resumen_Diario** | Un renglón por empleado por día |
+| **Resumen_Semanal** | Totales por semana (lunes a domingo) |
+| **Resumen_Mensual** | Totales por mes — es la hoja para liquidar nómina |
+| **Inconsistencias** | Días con salida faltante, duplicados y jornadas raras |
+| **Config** | Los parámetros ajustables |
+| **Auditoria** | Cada intento de marcación, aceptado o rechazado |
 
-## Paso 4 — Crea las hojas automáticamente
-
-1. Arriba del editor, en la lista de funciones, elige **`instalar`**.
-2. Presiona **▶ Ejecutar**.
-3. Google te pedirá permisos:
-   **Revisar permisos → tu cuenta → Configuración avanzada → Ir a (nombre del proyecto) → Permitir**.
-   Es normal: le estás dando permiso a **tu propio** script sobre **tu propia** hoja.
-4. Al terminar, vuelve a la hoja de cálculo. Vas a ver estas pestañas nuevas:
-
-   | Hoja | Para qué sirve |
-   |---|---|
-   | **Empleados** | Quiénes son y su rostro registrado |
-   | **Registros** | La base cruda: una fila por jornada, con GPS y auditoría |
-   | **Resumen_Diario** | Un renglón por empleado por día, con horas |
-   | **Resumen_Semanal** | Totales por semana (lunes a domingo) |
-   | **Resumen_Mensual** | Totales por mes |
-   | **Inconsistencias** | Días con salida faltante o jornadas raras — para corregir |
-   | **Config** | Los parámetros que puedes cambiar sin tocar código |
-   | **Auditoria** | Cada intento de marcación, aceptado o rechazado |
-
-   > Si ya tenías datos con otra estructura, **nada se borra**: la hoja vieja se
-   > conserva completa como `RESPALDO_…` y el sistema intenta migrar las columnas
-   > que reconoce.
-
-## Paso 5 — Publica el Apps Script (aquí se arregla el 404)
-
-1. Arriba a la derecha: **Implementar → Nueva implementación**.
-2. En el engranaje ⚙ elige **Aplicación web**.
-3. Configura exactamente así:
-   - **Descripción:** `Asistencia v2`
-   - **Ejecutar como:** `Yo (tu correo)`
-   - **Quién tiene acceso:** **`Cualquier persona`** ← *esto es obligatorio, si no la app no puede escribir*
-4. **Implementar** → copia la **URL de la aplicación web** (termina en `/exec`).
-
-> ⚠️ **Muy importante para el futuro:** cada vez que cambies el código debes ir a
-> **Implementar → Administrar implementaciones → ✏️ editar → Versión: Nueva versión → Implementar**.
-> Si solo guardas, la URL sigue sirviendo el código viejo. Y si creas una
-> implementación *nueva* en vez de editar la existente, la URL cambia y hay que
-> actualizarla en el `index.html`.
-
-## Paso 6 — Conecta la app
-
-1. Abre `index.html` y busca esta línea (está casi al inicio del `<script>`):
-   ```js
-   var SCRIPT_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT_TERMINADA_EN_/exec';
-   ```
-2. Reemplaza el texto entre comillas por la URL que copiaste en el paso 5.
-3. Guarda.
-
-## Paso 7 — Sube todo a GitHub
-
-En tu repositorio `mi-asistencia` debe quedar así:
-
-```
-mi-asistencia/
-├── index.html          ← el nuevo
-└── models/             ← los archivos de reconocimiento facial (déjalos igual)
-```
-
-Sube el `index.html` nuevo reemplazando el anterior. La carpeta `models/` no se toca.
-
-> La cámara **solo funciona por HTTPS**. GitHub Pages ya es HTTPS, así que sirve.
-> Si abres el archivo con doble clic desde tu computador (`file://`) la cámara no va a funcionar.
-
-## Paso 8 — Cambia el PIN de administrador
-
-1. En la hoja de cálculo, pestaña **Config**.
-2. Busca la fila `PIN_ADMIN` y cambia `1234` por un PIN tuyo.
-3. Ese PIN es el que se pide para **registrar empleados nuevos** y para **mejorar el reconocimiento**.
-   Sin él, cualquiera podría crear empleados falsos.
-
-## Paso 9 — Activa las tareas automáticas
-
-En la hoja de cálculo aparece un menú nuevo: **⏱ Asistencia**.
-
-Entra a **Crear disparadores automáticos**. Eso programa:
-- **23:50 todos los días** — cierra como `PENDIENTE` las jornadas donde nadie marcó salida.
-- **Cada 2 horas** — recalcula los resúmenes diario, semanal y mensual.
-
-## Paso 10 — Registra a la gente
-
-1. Abre la app en el celular o tablet de cada sede.
-2. Presiona **⚙ Registrar empleado / mejorar reconocimiento**.
-3. Pestaña **Empleado nuevo** → nombre completo → PIN → **Capturar rostro y guardar**.
-4. Repite con cada persona.
-
-**Consejo importante:** después de registrar a alguien, entra a
-**Mejorar rostro** y captura 2 o 3 muestras más de la misma persona en
-condiciones distintas (con gafas, con luz de la mañana, con luz de la tarde).
-Eso reduce muchísimo los "no te reconozco".
+**`Employees` y `Records` (las viejas) siguen ahí, intactas.** No se tocaron ni
+se renombraron: sus datos se copiaron a las hojas nuevas.
 
 ---
 
-## Ajustes que puedes hacer sin tocar código
+## Lo primero que deberías hacer
 
-Todo esto se cambia en la pestaña **Config** de la hoja:
+### 1. Cambia el PIN de administrador
 
-| Clave | Qué hace | Valor actual |
+Hoja **Config** → fila `PIN_ADMIN` → cámbialo (viene en `1234`).
+Ese PIN es el que pide la app para registrar empleados nuevos o mejorar un
+rostro. Sin él, cualquiera podría crear empleados falsos.
+
+### 2. Une los empleados duplicados
+
+Tienes 14 empleados registrados pero son 9 personas:
+
+- Fabian / fabian
+- Julian Jaramillo / Julián Jaramillo
+- Juan José González ×2
+- Carlos Alberto palacio Uribe ×2
+- Juan Andrés Flórez ×2 (uno quedó en Guayabal y otro en Centro)
+- David Monsalve / Donoban David Monsalve ← **este no lo une el sistema**, los
+  nombres son distintos. Revísalo tú.
+
+Menú **⏱ Asistencia → Unir empleados duplicados**. El más antiguo se queda con
+todas las muestras de rostro (queda reconociendo mejor), sus marcaciones se
+reasignan al empleado correcto y el duplicado queda en `Activo = NO`.
+**No borra ninguna fila.**
+
+### 3. Verifica las coordenadas de las otras 5 sedes
+
+La de **Guayabal - Julián** está verificada con el GPS de 17 marcaciones reales
+(`6.212850, -75.585934`). La coordenada que tenía el código antes estaba a
+**~600 metros** del local: con el radio de 250 m nadie habría podido marcar.
+
+Las otras cinco nunca han tenido una marcación, así que sus coordenadas siguen
+sin comprobar. Cuando alguien marque desde una de ellas, usa el menú
+**⏱ Asistencia → Sugerir coordenadas reales de sedes**: promedia el GPS de las
+marcaciones guardadas y te dice el punto exacto. Copia esos valores en la
+constante `SEDES` del Apps Script y vuelve a implementar (ver abajo).
+
+Mientras tanto, si alguien no puede marcar en otra sede, sube
+`RADIO_GEO_METROS` en Config temporalmente.
+
+### 4. Completa las 17 marcaciones sin salida
+
+Ninguna marcación anterior tiene hora de salida: el botón nunca funcionó.
+Todas quedaron como `PENDIENTE` en la hoja **Inconsistencias**. Si necesitas
+esas horas para nómina, complétalas a mano (ver más abajo).
+
+---
+
+## Ajustes sin tocar código — hoja **Config**
+
+| Clave | Qué hace | Valor |
 |---|---|---|
 | `PIN_ADMIN` | PIN para registrar empleados | `1234` — **cámbialo** |
 | `DESCUENTO_ALMUERZO_MIN` | Minutos de almuerzo que se descuentan | `60` |
-| `UMBRAL_DESCUENTO_HORAS` | Desde cuántas horas se descuenta el almuerzo | `6` |
+| `UMBRAL_DESCUENTO_HORAS` | Desde cuántas horas se aplica el descuento | `6` |
 | `MAX_HORAS_JORNADA` | Más de esto se marca como anomalía | `16` |
 | `MIN_MINUTOS_JORNADA` | Mínimo entre entrada y salida | `5` |
 | `PERMITIR_TURNO_NOCTURNO` | `SI` deja que la salida caiga al día siguiente | `SI` |
 | `EXIGIR_GPS` | `NO` desactiva el control de ubicación | `SI` |
-| `RADIO_GEO_METROS` | Cuántos metros alrededor de la sede se permite marcar | `250` |
+| `RADIO_GEO_METROS` | Metros permitidos alrededor de la sede | `250` |
 | `UMBRAL_ROSTRO` | Más bajo = más estricto el reconocimiento | `0.45` |
 | `DIAS_HISTORIAL` | Días que muestra la pestaña Historial | `30` |
 
-Después de cambiar algo, recarga la app en el celular.
-
-**Las sedes y sus coordenadas** sí están en el código, en la constante `SEDES`
-al inicio de `Codigo.gs`. Para corregir la ubicación de una sede: abre Google Maps,
-clic derecho sobre el punto exacto, copia las coordenadas y pégalas ahí. Luego
-**vuelve a implementar** (paso 5, nota importante).
-
-> Las coordenadas que tenía el proyecto son aproximadas. Vale la pena
-> corregirlas con el punto exacto de cada local; con un radio de 250 m eso
-> importa.
+Los cambios aplican de inmediato; solo hay que recargar la app en el celular.
 
 ---
 
-## Si algo no funciona
+## Menú **⏱ Asistencia** (en la hoja de cálculo)
+
+- **Instalar / reparar hojas** — recrea lo que falte. Seguro de ejecutar cuantas
+  veces quieras: nunca borra datos.
+- **Recalcular resúmenes** — reconstruye diario, semanal, mensual e inconsistencias.
+- **Cerrar jornadas olvidadas** — marca como `PENDIENTE` las entradas viejas sin salida.
+- **Unir empleados duplicados** — lo del punto 2.
+- **Sugerir coordenadas reales de sedes** — lo del punto 3.
+- **Crear disparadores automáticos** — ya están creados; solo si hay que rehacerlos.
+
+Si no ves el menú, recarga la hoja.
+
+### Tareas automáticas ya programadas
+
+- **23:50 todos los días** — cierra como `PENDIENTE` las jornadas sin salida.
+- **Cada 2 horas** — recalcula los resúmenes.
+
+---
+
+## Cómo cambiar el código
+
+Cada vez que edites `Codigo.gs`:
+
+1. Abre el proyecto: script.google.com → **Control de Asistencia v2**
+2. Pega el código y guarda (💾)
+3. **Implementar → Administrar implementaciones → ✏️ editar → Versión: `Nueva versión` → Implementar**
+
+> ⚠️ **El paso 3 es obligatorio.** Si solo guardas, la URL sigue sirviendo el
+> código viejo y parece que tu cambio "no hizo nada". Y usa **editar la
+> implementación existente**, no "Nueva implementación": esa última crea una
+> URL distinta y habría que cambiarla en el `index.html`.
+
+Para cambiar el `index.html`: súbelo a este repositorio y GitHub Pages lo
+publica solo en un par de minutos.
+
+---
+
+## Cómo corregir un día a mano
+
+Si alguien olvidó marcar la salida:
+
+1. Ve a la hoja **Inconsistencias** y ubica el `ID_Registro`.
+2. Búscalo en la hoja **Registros**.
+3. Escribe la hora real en `Salida` (formato `2026-08-31 17:00:00`).
+4. Calcula: `Horas_Brutas` = salida − entrada; `Descuento` = 1 si son más de 6 h;
+   `Horas_Netas` = brutas − descuento.
+5. Cambia `Estado` a `COMPLETO` y anota el motivo en `Observaciones`.
+6. Menú **⏱ Asistencia → Recalcular resúmenes**.
+
+---
+
+## Si algo falla
 
 | Síntoma | Causa casi segura | Solución |
 |---|---|---|
-| "Sin conexión con el servidor" | La URL del paso 6 está mal, o la implementación no quedó en "Cualquier persona" | Repite los pasos 5 y 6 |
-| "El servidor no devolvió datos válidos" | El acceso quedó en "Solo yo" | Paso 5, cambia **Quién tiene acceso** |
-| Los cambios al código no se ven | No creaste una versión nueva | **Administrar implementaciones → editar → Nueva versión** |
-| La cámara no abre | Estás en `http://` o `file://` | Ábrela por HTTPS (GitHub Pages) |
-| "Fuera del rango" siempre | Las coordenadas de la sede están mal | Corrige `SEDES` o sube `RADIO_GEO_METROS` |
-| No reconoce a alguien | Pocas muestras de su rostro | **⚙ → Mejorar rostro**, agrega 2-3 muestras |
+| "Sin conexión con el servidor" | La implementación quedó en "Solo yo" | Implementar → Administrar → editar → Quién tiene acceso: **Cualquiera** |
+| Los cambios al código no se ven | No creaste una versión nueva | Ver "Cómo cambiar el código" |
+| La cámara no abre | La página no está en HTTPS | Ábrela desde el enlace de GitHub Pages, no con doble clic al archivo |
+| "Fuera del rango" siempre | Coordenadas de la sede mal | Menú → Sugerir coordenadas reales de sedes |
+| No reconoce a alguien | Pocas muestras de su rostro | En la app: ⚙ → Mejorar rostro → agrega 2-3 muestras |
 | Confunde dos personas | Umbral muy permisivo | Baja `UMBRAL_ROSTRO` a `0.40` en Config |
-| Los resúmenes están desactualizados | El disparador no corrió aún | Menú **⏱ Asistencia → Recalcular resúmenes** |
+| Resúmenes desactualizados | El disparador aún no corrió | Menú → Recalcular resúmenes |
+| "Ya tienes una ENTRADA abierta" | No marcó salida el día anterior | Es correcto. Corrige ese día a mano o usa "Cerrar jornadas olvidadas" |

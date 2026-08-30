@@ -3,7 +3,10 @@
 Marcación de entrada y salida por reconocimiento facial, con Google Sheets como
 base de datos y control de ubicación por GPS.
 
-**→ Empieza por [INSTALACION.md](INSTALACION.md).**
+**App en vivo:** https://estebanchipre-sys.github.io/mi-asistencia/
+**→ Estado del sistema y mantenimiento: [INSTALACION.md](INSTALACION.md)**
+
+> Instalado y verificado el 30 de agosto de 2026.
 
 ---
 
@@ -13,7 +16,9 @@ Los errores de marcación no venían de una sola cosa. Estos eran los problemas:
 
 | Problema | Qué pasaba | Cómo quedó |
 |---|---|---|
-| **La URL del servidor daba 404** | Las marcaciones se enviaban a una dirección muerta; el usuario veía el mensaje de éxito pero nada se guardaba | La guía obliga a redesplegar y la app avisa en pantalla si no hay conexión |
+| **El Apps Script vinculado a la hoja ya no existía** | La URL respondía 404: las marcaciones se enviaban a una dirección muerta, el usuario veía "registrado" y nada se guardaba. **Ninguna de las 17 marcaciones tenía hora de salida** | Backend nuevo como proyecto independiente que apunta a la hoja por su ID; no depende del vínculo |
+| **La sede Guayabal - Julián estaba a ~600 m de su ubicación real** | Con un radio estricto, nadie habría podido marcar | Coordenada recalculada con el GPS de las 17 marcaciones reales (dispersión de 34 m) |
+| **14 empleados registrados eran 9 personas** | Cada intento fallido creaba un empleado nuevo, y sus marcaciones quedaban repartidas entre los duplicados | Función que los une conservando todas las muestras de rostro y reasignando las marcaciones |
 | **Se llamaba al servidor dentro del bucle de video** | 4-8 peticiones por segundo mientras hubiera una cara enfrente. Google limita las cuotas y empezaba a rechazar y a duplicar | El bucle de video **nunca** llama al servidor. Solo consulta una vez, cuando confirma la identidad |
 | **Sin control de duplicados** | Dos toques seguidos = dos registros | `LockService` + una sola entrada y una sola salida por día, validado en el servidor |
 | **El rostro se "reconocía" con un solo frame** | Un parpadeo confundía a la persona y marcaba a nombre de otro | Se exigen 4 detecciones seguidas de la misma persona antes de habilitar los botones |
@@ -23,6 +28,8 @@ Los errores de marcación no venían de una sola cosa. Estos eran los problemas:
 | **Cualquiera podía registrarse** | Bastaba escribir un nombre | Requiere PIN de administrador |
 | **Sin resúmenes** | Solo un listado plano | Hojas de resumen diario, semanal y mensual + hoja de inconsistencias |
 | **Fechas desfasadas un día** | La fecha se construía en la zona horaria del servidor, no en la de Colombia | Todo el cálculo de fechas está anclado a `America/Bogota` |
+| **Horas mal leídas al importar** | Sheets guarda las horas ancladas al 30/12/1899 y Bogotá tenía otro huso (−04:56) en esa fecha; formatear con zona horaria desplazaba la hora casi 4 minutos | Las horas se leen sin aplicar zona horaria |
+| **El resumen mensual salía vacío** | Sheets convertía el texto `2026-08` en la fecha 1-ago-2026, y la comparación fallaba | La clave del mes se normaliza venga como texto o como fecha |
 
 ---
 
@@ -56,7 +63,8 @@ Descuento · Horas_Netas · Sede_Entrada · Sede_Salida · GPS_Entrada · GPS_Sa
 Estado · Semana · Mes · Observaciones`
 
 **Estados:** `ABIERTO` (en turno) · `COMPLETO` (jornada cerrada) ·
-`PENDIENTE` (nunca marcó salida) · `ANOMALIA` (jornada demasiado larga).
+`PENDIENTE` (nunca marcó salida) · `ANOMALIA` (jornada demasiado larga) ·
+`DUPLICADO` (entrada repetida del mismo día, importada del sistema anterior; no suma horas).
 
 ### `Resumen_Diario`
 Un renglón por empleado por día, ordenado del más reciente al más viejo.
@@ -108,7 +116,11 @@ Si alguien olvidó marcar la salida:
   cuantas veces quieras: nunca borra datos, respalda lo que no reconoce.
 - **Recalcular resúmenes** — reconstruye diario, semanal, mensual e inconsistencias.
 - **Cerrar jornadas olvidadas** — marca como `PENDIENTE` las entradas viejas sin salida.
-- **Crear disparadores automáticos** — programa las dos tareas anteriores.
+- **Unir empleados duplicados** — junta los que están registrados dos veces con el
+  mismo nombre, conservando todas las muestras de rostro. No borra filas.
+- **Sugerir coordenadas reales de sedes** — promedia el GPS de las marcaciones
+  guardadas y te da el punto exacto de cada sede.
+- **Crear disparadores automáticos** — programa las tareas de arriba.
 
 ---
 
@@ -123,6 +135,10 @@ node pruebas/simulador.js
 Cubre 44 casos: doble entrada, doble salida, turno nocturno que cruza medianoche,
 salida olvidada, descuento de almuerzo, control de GPS, semana ISO y los resúmenes.
 Si vas a tocar `Codigo.gs`, corre esto antes de subirlo.
+
+Además se verificó contra el sistema real, ya desplegado: entrada aceptada,
+segunda entrada rechazada, marcación desde 9,8 km rechazada, salida al minuto
+rechazada, salida válida registrada con sus horas, y segunda salida rechazada.
 
 ---
 
