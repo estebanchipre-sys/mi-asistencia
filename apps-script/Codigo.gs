@@ -263,7 +263,10 @@ function cfgSi_(c, k)  { return String(c[k] || '').toUpperCase() === 'SI'; }
  * trata de migrar sus datos por nombre de columna.
  */
 function instalar() {
-  var libro = SpreadsheetApp.getActiveSpreadsheet();
+  var libro = ss_();
+  if (!libro) {
+    throw new Error('No se encontró la hoja de cálculo. Revisa la constante ID_HOJA al inicio del script.');
+  }
   libro.setSpreadsheetTimeZone(TZ);
   var sello = Utilities.formatDate(new Date(), TZ, 'yyyyMMdd_HHmmss');
   var informe = [];
@@ -411,17 +414,61 @@ function indices_(cabecera, mapa) {
   return out;
 }
 
-/** Combina '2026-08-10' + '12:32:42' en un Date real de la hora de Bogotá. */
+/**
+ * Saca [hora, minuto, segundo] de una celda de hora.
+ * Google Sheets NO devuelve "12:32:42" como texto: devuelve un objeto Date
+ * anclado al 30/12/1899. Si se trata como texto, la hora se pierde.
+ * También acepta texto con formato 12 horas ("5:30 p. m.").
+ */
+function horaComponentes_(v) {
+  if (v === '' || v === null || v === undefined) return [0, 0, 0];
+
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    // OJO: no se usa fmt_() aquí. Las celdas de hora de Sheets se anclan al
+    // 30/12/1899 y en esa época Bogotá tenía otro huso (-04:56), así que
+    // formatear con zona horaria desplaza la hora casi 4 minutos.
+    return [v.getHours(), v.getMinutes(), v.getSeconds()];
+  }
+
+  var t = String(v).trim();
+  var m = t.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i);
+  if (!m) return [0, 0, 0];
+
+  var h = Number(m[1]), mi = Number(m[2]), s = Number(m[3] || 0);
+  var suf = String(m[4] || '').toLowerCase().replace(/[.\s]/g, '');
+  if (suf === 'pm' && h < 12) h += 12;
+  if (suf === 'am' && h === 12) h = 0;
+  return [h, mi, s];
+}
+
+/** Combina la fecha '2026-08-10' con la hora 12:32:42 en un Date real de Bogotá. */
 function fechaHoraLocal_(fechaStr, horaStr) {
   var f = claveFecha_(fechaStr);
   if (!f || f.length < 10) return null;
   var p = f.split('-');
-  var h = String(horaStr || '00:00:00').trim().split(':');
   if (p.length !== 3) return null;
+
+  var hms = horaComponentes_(horaStr);
   var d = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]),
-                            (Number(h[0]) || 0) + OFFSET_BOGOTA,
-                            Number(h[1]) || 0, Number(h[2]) || 0));
+                            hms[0] + OFFSET_BOGOTA, hms[1], hms[2]));
   return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Vuelve a importar SOLO las marcaciones desde la hoja "Records".
+ * Borra lo que haya en "Registros" y lo trae otra vez desde cero.
+ * Úsala si una importación quedó mal; los empleados no se tocan.
+ */
+function reimportarRegistros() {
+  var s = hoja_(HOJAS.REGISTROS);
+  var n = s.getLastRow();
+  if (n > 1) s.deleteRows(2, n - 1);
+
+  var informe = importarSistemaAnterior_();
+  normalizarRegistros_();
+  recalcularResumenes();
+  Logger.log(informe.join('\n'));
+  return informe;
 }
 
 /**
@@ -483,7 +530,11 @@ function importarSistemaAnterior_() {
   var oReg = libro.getSheetByName(LEGACY_REGISTROS);
   var dReg = libro.getSheetByName(HOJAS.REGISTROS);
   if (oReg && dReg && dReg.getLastRow() <= 1 && oReg.getLastRow() > 1) {
-    var w = oReg.getDataRange().getValues();
+    var rango = oReg.getDataRange();
+    var w = rango.getValues();
+    // Lo que se VE en pantalla: para fechas y horas es más fiable que el valor
+    // interno, que Google ancla a 1899 y desplaza por husos horarios antiguos.
+    var vista = rango.getDisplayValues();
     var i2 = indices_(w[0], {
       id:      ['id', 'idregistro'],
       emp:     ['employeeid', 'idempleado'],
@@ -501,12 +552,16 @@ function importarSistemaAnterior_() {
     for (var j = 1; j < w.length; j++) {
       if (i2.fecha < 0 || !w[j][i2.fecha]) continue;
 
-      var entrada = fechaHoraLocal_(w[j][i2.fecha], i2.entrada >= 0 ? w[j][i2.entrada] : '');
-      if (!entrada) continue;
-      var salida = (i2.salida >= 0 && w[j][i2.salida])
-        ? fechaHoraLocal_(w[j][i2.fecha], w[j][i2.salida]) : null;
+      // Se prefiere el texto visible; si está vacío se cae al valor interno.
+      var fTxt  = (vista[j][i2.fecha]  || w[j][i2.fecha]);
+      var eTxt  = i2.entrada >= 0 ? (vista[j][i2.entrada] || w[j][i2.entrada]) : '';
+      var sTxt  = i2.salida  >= 0 ? (vista[j][i2.salida]  || w[j][i2.salida])  : '';
 
-      var claveDia = String(w[j][i2.emp]) + '|' + claveFecha_(w[j][i2.fecha]);
+      var entrada = fechaHoraLocal_(fTxt, eTxt);
+      if (!entrada) continue;
+      var salida = sTxt ? fechaHoraLocal_(fTxt, sTxt) : null;
+
+      var claveDia = String(w[j][i2.emp]) + '|' + claveFecha_(fTxt);
       var esDuplicado = !!vistos[claveDia];
       vistos[claveDia] = true;
       if (esDuplicado) duplicadosDia++;
@@ -1313,12 +1368,14 @@ function recalcularResumenes() {
       estado
     ]);
 
-    if (estado === 'PENDIENTE' || estado === 'ANOMALIA' || (estado === 'ABIERTO' && fechaClave < fmt_(ahora_(), 'yyyy-MM-dd'))) {
+    if (estado === 'PENDIENTE' || estado === 'ANOMALIA' || estado === 'DUPLICADO' ||
+        (estado === 'ABIERTO' && fechaClave < fmt_(ahora_(), 'yyyy-MM-dd'))) {
+      var problema = 'Falta marcar la SALIDA';
+      if (estado === 'ANOMALIA')  problema = 'Jornada demasiado larga: verificar';
+      if (estado === 'DUPLICADO') problema = 'Entrada repetida el mismo día: no cuenta horas';
       incons.push([
         d[C.FECHA], empId, nombre,
-        d[C.ENTRADA] || '', d[C.SALIDA] || '', estado,
-        estado === 'ANOMALIA' ? 'Jornada demasiado larga: verificar' : 'Falta marcar la SALIDA',
-        String(d[C.ID])
+        d[C.ENTRADA] || '', d[C.SALIDA] || '', estado, problema, String(d[C.ID])
       ]);
     }
 
