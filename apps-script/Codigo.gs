@@ -107,7 +107,27 @@ var CONFIG_DEFAULT = [
 
 /* ─────────────────────────  UTILIDADES  ───────────────────────── */
 
-function ss_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+/**
+ * ID de la hoja de cálculo (lo que va entre /d/ y /edit en la URL).
+ *
+ * · Si este proyecto está VINCULADO a la hoja (Extensiones → Apps Script),
+ *   puedes dejarlo vacío: ''.
+ * · Si es un proyecto INDEPENDIENTE (script.google.com), déjalo con el ID.
+ *
+ * Se deja puesto porque el script que estaba vinculado a la hoja se perdió,
+ * y por eso la URL /exec anterior respondía 404.
+ */
+var ID_HOJA = '1ogbq3c4jInMVKPp_k0yOTeiXb12Bk_uWpdAJt05Z-vk';
+
+function ss_() {
+  if (ID_HOJA) return SpreadsheetApp.openById(ID_HOJA);
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+/** Devuelve la interfaz de la hoja, o null si el script corre sin ventana abierta. */
+function ui_() {
+  try { return SpreadsheetApp.getUi(); } catch (e) { return null; }
+}
 
 function hoja_(nombre) {
   var s = ss_().getSheetByName(nombre);
@@ -1444,8 +1464,9 @@ function manejar_(p) {
 /* ─────────────────────────  MENÚ EN LA HOJA  ───────────────────────── */
 
 function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('⏱ Asistencia')
+  var ui = ui_();
+  if (!ui) return;
+  ui.createMenu('⏱ Asistencia')
     .addItem('1. Instalar / reparar hojas', 'menuInstalar')
     .addItem('2. Recalcular resúmenes', 'menuRecalcular')
     .addItem('3. Cerrar jornadas olvidadas', 'menuCerrar')
@@ -1457,50 +1478,91 @@ function onOpen() {
     .addToUi();
 }
 
+/** Ejecuta esto UNA VEZ desde el editor: deja todo listo de una. */
+function instalarTodo() {
+  var informe = instalar();
+  informe = informe.concat(configurarDisparadores_());
+  Logger.log(informe.join('\n'));
+  return informe.join('\n');
+}
+
 function menuInstalar() {
   var informe = instalar();
-  SpreadsheetApp.getUi().alert('Instalación', informe.join('\n\n'), SpreadsheetApp.getUi().ButtonSet.OK);
+  var ui = ui_();
+  if (ui) ui.alert('Instalación', informe.join('\n\n'), ui.ButtonSet.OK);
+  return informe;
 }
 
 function menuRecalcular() {
   var r = recalcularResumenes();
-  SpreadsheetApp.getUi().alert('Resúmenes actualizados',
-    'Días: ' + r.diario + '\nSemanas·empleado: ' + r.semanal + '\nMeses·empleado: ' + r.mensual +
-    '\nInconsistencias: ' + r.inconsistencias, SpreadsheetApp.getUi().ButtonSet.OK);
+  var ui = ui_();
+  var txt = 'Días: ' + r.diario + '\nSemanas·empleado: ' + r.semanal +
+            '\nMeses·empleado: ' + r.mensual + '\nInconsistencias: ' + r.inconsistencias;
+  if (ui) ui.alert('Resúmenes actualizados', txt, ui.ButtonSet.OK);
+  return txt;
 }
 
 function menuCerrar() {
   var n = cerrarJornadasOlvidadas();
-  SpreadsheetApp.getUi().alert('Jornadas cerradas', n + ' jornada(s) sin salida quedaron como PENDIENTE.',
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  var ui = ui_();
+  if (ui) ui.alert('Jornadas cerradas', n + ' jornada(s) sin salida quedaron como PENDIENTE.', ui.ButtonSet.OK);
+  return n;
 }
 
 function menuConsolidar() {
-  var ui = SpreadsheetApp.getUi();
-  var r = ui.alert('Unir empleados duplicados',
-    'Se van a unir los empleados que estén registrados dos veces con el mismo nombre.\n\n' +
-    'El más antiguo se queda con todas las muestras de rostro, sus marcaciones se reasignan ' +
-    'y los duplicados quedan como Activo = NO.\n\nNo se borra ninguna fila. ¿Continuar?',
-    ui.ButtonSet.YES_NO);
-  if (r !== ui.Button.YES) return;
-  ui.alert('Resultado', consolidarDuplicados().join('\n\n'), ui.ButtonSet.OK);
+  var ui = ui_();
+  if (ui) {
+    var r = ui.alert('Unir empleados duplicados',
+      'Se van a unir los empleados que estén registrados dos veces con el mismo nombre.\n\n' +
+      'El más antiguo se queda con todas las muestras de rostro, sus marcaciones se reasignan ' +
+      'y los duplicados quedan como Activo = NO.\n\nNo se borra ninguna fila. ¿Continuar?',
+      ui.ButtonSet.YES_NO);
+    if (r !== ui.Button.YES) return;
+  }
+  var informe = consolidarDuplicados();
+  if (ui) ui.alert('Resultado', informe.join('\n\n'), ui.ButtonSet.OK);
+  Logger.log(informe.join('\n'));
+  return informe;
 }
 
 function menuCoordenadas() {
-  SpreadsheetApp.getUi().alert('Coordenadas reales según el GPS de las marcaciones',
-    sugerirCoordenadas().join('\n\n') +
-    '\n\nCopia estos valores en la constante SEDES del Apps Script y vuelve a implementar.',
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  var lineas = sugerirCoordenadas();
+  var ui = ui_();
+  var txt = lineas.join('\n\n') +
+    '\n\nCopia estos valores en la constante SEDES del Apps Script y vuelve a implementar.';
+  if (ui) ui.alert('Coordenadas reales según el GPS de las marcaciones', txt, ui.ButtonSet.OK);
+  Logger.log(txt);
+  return txt;
+}
+
+/** Programa las tareas automáticas y el menú de la hoja. Sin ventanas. */
+function configurarDisparadores_() {
+  var objetivo = ['cerrarJornadasOlvidadas', 'recalcularResumenes', 'onOpen'];
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (objetivo.indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+  });
+
+  ScriptApp.newTrigger('cerrarJornadasOlvidadas').timeBased().atHour(23).nearMinute(50).everyDays(1).create();
+  ScriptApp.newTrigger('recalcularResumenes').timeBased().everyHours(2).create();
+
+  var informe = ['Disparadores creados: cierre de jornadas olvidadas a las 23:50 y recálculo de resúmenes cada 2 horas.'];
+
+  // Si el proyecto es independiente, se instala el menú en la hoja por su ID.
+  if (ID_HOJA) {
+    try {
+      ScriptApp.newTrigger('onOpen').forSpreadsheet(ID_HOJA).onOpen().create();
+      informe.push('El menú "⏱ Asistencia" quedó instalado en la hoja (recárgala para verlo).');
+    } catch (e) {
+      informe.push('No se pudo instalar el menú en la hoja: ' + e.message);
+    }
+  }
+  return informe;
 }
 
 function crearDisparadores() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (['cerrarJornadasOlvidadas', 'recalcularResumenes'].indexOf(t.getHandlerFunction()) >= 0) {
-      ScriptApp.deleteTrigger(t);
-    }
-  });
-  ScriptApp.newTrigger('cerrarJornadasOlvidadas').timeBased().atHour(23).nearMinute(50).everyDays(1).create();
-  ScriptApp.newTrigger('recalcularResumenes').timeBased().everyHours(2).create();
-  SpreadsheetApp.getUi().alert('Listo', 'Disparadores creados:\n· Cierre de jornadas olvidadas: 23:50 cada día\n· Recálculo de resúmenes: cada 2 horas',
-    SpreadsheetApp.getUi().ButtonSet.OK);
+  var informe = configurarDisparadores_();
+  var ui = ui_();
+  if (ui) ui.alert('Listo', informe.join('\n\n'), ui.ButtonSet.OK);
+  Logger.log(informe.join('\n'));
+  return informe;
 }
